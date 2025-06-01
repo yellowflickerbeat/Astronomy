@@ -1,0 +1,13 @@
+{
+  "name": "hubblevwebb",
+  "version": "1.0.0",
+  "description": "Hubble and Webb telescope comparison app",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "dev": "python server.py"
+  },
+  "dependencies": {
+    "python-shell": "^5.0.0"
+  }
+}
