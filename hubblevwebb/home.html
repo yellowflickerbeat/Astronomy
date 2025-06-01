@@ -4,303 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Observatory Comparison</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #16213e 100%);
-            min-height: 100vh;
-            color: #ffffff;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Animated star background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-                radial-gradient(2px 2px at 40px 70px, #fff, transparent),
-                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
-                radial-gradient(1px 1px at 130px 80px, #fff, transparent),
-                radial-gradient(2px 2px at 160px 30px, #fff, transparent);
-            background-repeat: repeat;
-            background-size: 200px 100px;
-            animation: sparkle 20s linear infinite;
-            z-index: -1;
-            opacity: 0.6;
-        }
-
-        @keyframes sparkle {
-            from { transform: translateY(0px); }
-            to { transform: translateY(-100px); }
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-            animation: fadeInDown 1s ease-out;
-        }
-
-        .header h1 {
-            font-size: 3.5rem;
-            background: linear-gradient(45deg, #64b5f6, #bb86fc, #ff8a80);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-            text-shadow: 0 0 30px rgba(100, 181, 246, 0.3);
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            color: #b3b3b3;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .comparison-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 60px;
-            animation: fadeInUp 1s ease-out 0.3s both;
-        }
-
-        .telescope-box {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .telescope-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .telescope-box:hover::before {
-            left: 100%;
-        }
-
-        .telescope-box:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(100, 181, 246, 0.2);
-            border-color: rgba(100, 181, 246, 0.3);
-        }
-
-        .telescope-title {
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #64b5f6;
-            text-shadow: 0 0 10px rgba(100, 181, 246, 0.5);
-        }
-
-        .jwst-title {
-            color: #ff8a80;
-            text-shadow: 0 0 10px rgba(255, 138, 128, 0.5);
-        }
-
-        .image-container {
-            width: 100%;
-            height: 300px;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-            background: linear-gradient(45deg, #1a1a2e, #16213e);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .image-container:hover {
-            border-color: #64b5f6;
-            box-shadow: inset 0 0 20px rgba(100, 181, 246, 0.1);
-        }
-
-        .image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .image-container:hover img {
-            transform: scale(1.05);
-        }
-
-        .image-placeholder {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1.1rem;
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        .upload-btn {
-            background: linear-gradient(45deg, #64b5f6, #42a5f5);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .upload-btn:hover {
-            background: linear-gradient(45deg, #42a5f5, #2196f3);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(100, 181, 246, 0.4);
-        }
-
-        .differences-section {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 40px;
-            animation: fadeInUp 1s ease-out 0.6s both;
-        }
-
-        .differences-title {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 30px;
-            background: linear-gradient(45deg, #bb86fc, #64b5f6);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .text-area {
-            width: 100%;
-            min-height: 200px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            color: #ffffff;
-            font-size: 1.1rem;
-            font-family: inherit;
-            line-height: 1.6;
-            resize: vertical;
-            transition: all 0.3s ease;
-        }
-
-        .text-area:focus {
-            outline: none;
-            border-color: #64b5f6;
-            box-shadow: 0 0 20px rgba(100, 181, 246, 0.3);
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        .text-area::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .comparison-container {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-            
-            .header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .container {
-                padding: 20px 15px;
-            }
-            
-            .telescope-box, .differences-section {
-                padding: 20px;
-            }
-        }
-
-        /* Glowing effect for special elements */
-        .glow {
-            box-shadow: 0 0 20px rgba(100, 181, 246, 0.3);
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(45deg, #64b5f6, #bb86fc);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(45deg, #42a5f5, #9c27b0);
-        }
-    </style>
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
+    <div class="stars"></div>
     <div class="container">
         <div class="header">
             <h1>Space Observatory Comparison</h1>
             <p>Compare stunning images captured by the James Webb Space Telescope and the Hubble Space Telescope, and explore the differences between these remarkable instruments.</p>
+        </div>
+
+        <div class="search-controls">
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search cosmic objects...">
+                <div class="search-dropdown" id="search-dropdown"></div>
+            </div>
+            <button class="random-btn" id="random-btn">
+                <span>🎲</span>
+                Random
+            </button>
         </div>
 
         <div class="comparison-container">
@@ -314,6 +36,7 @@
                         <button class="upload-btn" onclick="document.getElementById('jwst-upload').click()">Choose Image</button>
                     </div>
                 </div>
+                <div class="image-info" id="jwst-info"></div>
             </div>
 
             <div class="telescope-box">
@@ -326,6 +49,7 @@
                         <button class="upload-btn" onclick="document.getElementById('hubble-upload').click()">Choose Image</button>
                     </div>
                 </div>
+                <div class="image-info" id="hubble-info"></div>
             </div>
         </div>
 
@@ -333,6 +57,7 @@
             <h2 class="differences-title">Image Analysis & Differences</h2>
             <textarea 
                 class="text-area" 
+                id="analysis-text"
                 placeholder="Compare and contrast the images from JWST and Hubble here. Consider aspects like:
 
 • Wavelength coverage (infrared vs visible light)
@@ -347,55 +72,6 @@ What differences do you notice between the two telescopes' capabilities and the 
         </div>
     </div>
 
-    <script>
-        // Handle image uploads
-        function handleImageUpload(inputId, containerId) {
-            const input = document.getElementById(inputId);
-            const container = document.getElementById(containerId);
-            
-            input.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        container.innerHTML = `<img src="${e.target.result}" alt="Space telescope image">`;
-                        container.classList.add('glow');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // Initialize upload handlers
-        handleImageUpload('jwst-upload', 'jwst-container');
-        handleImageUpload('hubble-upload', 'hubble-container');
-
-        // Add subtle parallax effect to stars
-        window.addEventListener('mousemove', function(e) {
-            const stars = document.querySelector('body::before');
-            const x = e.clientX / window.innerWidth;
-            const y = e.clientY / window.innerHeight;
-            
-            document.body.style.setProperty('--mouse-x', x);
-            document.body.style.setProperty('--mouse-y', y);
-        });
-
-        // Add typing effect to placeholder
-        const textarea = document.querySelector('.text-area');
-        let placeholderIndex = 0;
-        const originalPlaceholder = textarea.placeholder;
-        
-        textarea.addEventListener('focus', function() {
-            if (this.value === '') {
-                this.placeholder = 'Start typing your comparison...';
-            }
-        });
-        
-        textarea.addEventListener('blur', function() {
-            if (this.value === '') {
-                this.placeholder = originalPlaceholder;
-            }
-        });
-    </script>
+    <script src="home.js"></script>
 </body>
 </html>
