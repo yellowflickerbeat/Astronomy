@@ -111,7 +111,7 @@ const analysisText = document.getElementById('analysis-text');
 // Initialize stars
 function createStars() {
     const starsContainer = document.querySelector('.stars');
-    const numStars = 250;
+    const numStars = 800; // Increased from 250
     
     // Clear existing stars
     starsContainer.innerHTML = '';
@@ -122,65 +122,64 @@ function createStars() {
         
         // Random size classes with weighted distribution
         const rand = Math.random();
-        if (rand < 0.6) {
+        if (rand < 0.7) { // Increased small star probability
             star.classList.add('small');
-        } else if (rand < 0.85) {
+        } else if (rand < 0.9) {
             star.classList.add('medium');
-        } else if (rand < 0.95) {
+        } else if (rand < 0.97) {
             star.classList.add('large');
         } else {
             star.classList.add('bright'); // Special bright blue stars
         }
         
-        // Random position
+        // Random position - ensure full coverage
         star.style.left = Math.random() * 100 + '%';
         star.style.top = Math.random() * 100 + '%';
         
-        // Random animation delay for natural, non-synchronized twinkling
-        star.style.animationDelay = Math.random() * 6 + 's';
+        // Ensure all stars twinkle with random timing
+        star.style.animationDelay = Math.random() * 8 + 's'; // Extended range
         
-        // Slightly vary animation duration for more organic feel
-        const baseClass = star.classList[1]; // small, medium, large, or bright
+        // All stars get twinkling animation
+        const baseClass = star.classList[1];
         let baseDuration = 3;
-        if (baseClass === 'small') baseDuration = 4;
-        if (baseClass === 'medium') baseDuration = 3;
-        if (baseClass === 'large') baseDuration = 5;
-        if (baseClass === 'bright') baseDuration = 2.5;
+        if (baseClass === 'small') baseDuration = 5; // Slower for visibility
+        if (baseClass === 'medium') baseDuration = 4;
+        if (baseClass === 'large') baseDuration = 3;
+        if (baseClass === 'bright') baseDuration = 2;
         
         star.style.animationDuration = (baseDuration + (Math.random() - 0.5) * 2) + 's';
         
         starsContainer.appendChild(star);
     }
     
-    // Add some constellation-like patterns
+    // Add more constellation patterns
     createConstellations();
 }
 
-// Create small groups of stars that twinkle together
 function createConstellations() {
     const starsContainer = document.querySelector('.stars');
-    const numConstellations = 8;
+    const numConstellations = 15; // Increased from 8
     
     for (let i = 0; i < numConstellations; i++) {
-        // Random position for constellation center
-        const centerX = Math.random() * 80 + 10; // Keep away from edges
-        const centerY = Math.random() * 80 + 10;
+        // Full coverage positioning
+        const centerX = Math.random() * 100; // Full width
+        const centerY = Math.random() * 100; // Full height
         
-        // Create 3-6 stars in a small cluster
-        const starsInConstellation = 3 + Math.random() * 3;
-        const syncDelay = Math.random() * 5;
+        // Create 4-8 stars in each cluster
+        const starsInConstellation = 4 + Math.random() * 4; // Increased cluster size
+        const syncDelay = Math.random() * 6;
         
         for (let j = 0; j < starsInConstellation; j++) {
             const star = document.createElement('div');
             star.className = 'star medium';
             
-            // Position within 5% radius of center
-            star.style.left = centerX + (Math.random() - 0.5) * 10 + '%';
-            star.style.top = centerY + (Math.random() - 0.5) * 10 + '%';
+            // Tighter clustering for better visibility
+            star.style.left = Math.max(0, Math.min(100, centerX + (Math.random() - 0.5) * 8)) + '%';
+            star.style.top = Math.max(0, Math.min(100, centerY + (Math.random() - 0.5) * 8)) + '%';
             
-            // Synchronized twinkling for constellation effect
-            star.style.animationDelay = syncDelay + (Math.random() * 0.5) + 's';
-            star.style.animationDuration = '3s';
+            // All constellation stars twinkle
+            star.style.animationDelay = syncDelay + (Math.random() * 0.3) + 's';
+            star.style.animationDuration = '3.5s';
             
             starsContainer.appendChild(star);
         }
