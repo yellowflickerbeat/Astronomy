@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Starlink Earth Tracker</title>
+
+    <!-- Three.js Library for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Satellite.js Library for TLE (Two-Line Element) propagation to calculate satellite positions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.4/satellite.min.js"></script>
+
+    <style>
+        /* Basic reset and full-page layout */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            height: 100%; /* Full height */
+            font-family: 'Arial', sans-serif;
+            background: #000; /* Dark background for space theme */
+        }
+        
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Styles for the control panel */
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100; /* Ensure controls are above the 3D scene */
+            background: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            min-width: 250px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3); /* Greenish glow */
+        }
+        
+        #controls h3 {
+            margin: 0 0 15px 0;
+            color: #00ff88; /* Accent color */
+            text-shadow: 0 0 5px #00ff88;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        /* Button styles */
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+            font-size: 12px;
+            transition: all 0.3s ease; /* Smooth transitions for hover effects */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        button:hover {
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); /* Enhanced shadow on hover */
+        }
+        
+        button.active {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); /* Active button accent color */
+            box-shadow: 0 0 10px #00ff88;
+        }
+        
+        /* Styles for the live statistics panel */
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 12px;
+            min-width: 200px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        #stats h4 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* Styles for the legend */
+        #legend {
+            position: absolute;
+            bottom: 320px; /* Position above satellite details */
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 12px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        #legend h4 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend-dot.active {
+            background: #00ff88; /* Green for active */
+        }
+
+    .legend-dot.inactive {
+        background: #ff4444; /* Red for inactive */
+    }
+
+    /* Styles for the satellite list panel */
+    #satelliteList {
+        position: absolute;
+        left: 20px;
+        bottom: 50px;
+        width: 280px;
+        max-height: 400px; /* Limit height for scrollability */
+        background: rgba(0, 0, 0, 0.9);
+        border-radius: 10px;
+        color: white;
+        font-size: 11px;
+        z-index: 100;
+        overflow-y: auto; /* Enable scrolling for long lists */
+        display: none; /* Hidden by default, toggled by button */
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    #satelliteList h4 {
+        margin: 0;
+        padding: 15px;
+        color: #00ff88;
+        border-bottom: 1px solid #333;
+        text-shadow: 0 0 5px #00ff88;
+        position: sticky; /* Keep header visible when scrolling */
+        top: 0;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 101;
+    }
+
+    .satellite-item {
+        padding: 8px 15px;
+        border-bottom: 1px solid #222;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+    }
+
+    .satellite-item:last-child {
+        border-bottom: none; /* No border for the last item */
+    }
+
+    .satellite-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .satellite-item.selected {
+        background: rgba(0, 255, 136, 0.2); /* Highlight selected item */
+        border-left: 3px solid #00ff88;
+        padding-left: 12px;
+    }
+
+    .satellite-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    .satellite-status-dot.active {
+        background: #00ff88;
+    }
+
+    .satellite-status-dot.inactive {
+        background: #ff4444;
+    }
+
+    /* Styles for the satellite details panel */
+    #satelliteDetails {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        width: 250px;
+        background: rgba(0, 0, 0, 0.9);
+        border-radius: 10px;
+        color: white;
+        font-size: 12px;
+        z-index: 100;
+        display: none; /* Hidden by default, shown on selection */
+        padding: 15px;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    #satelliteDetails h4 {
+        margin: 0 0 10px 0;
+        color: #00ff88;
+        text-shadow: 0 0 5px #00ff88;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 4px 0;
+        border-bottom: 1px solid #333;
+    }
+
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .detail-value {
+        color: #00ff88;
+        font-weight: bold;
+    }
+    
+    /* Styles for the loading overlay */
+    #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 18px;
+        z-index: 1000; /* Ensure it's on top */
+        text-align: center;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+    }
+    
+    .spinner {
+        border: 3px solid #333;
+        border-top: 3px solid #00ff88; /* Green accent for spinner */
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite; /* Spinning animation */
+        margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Custom message box for alerts */
+    #messageBox {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.9); /* Red background for errors */
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        z-index: 1001; /* Above everything else */
+        text-align: center;
+        border: 2px solid #ff0000;
+    }
+    #messageBox button {
+        background: #fff;
+        color: #000;
+        margin-top: 15px;
+        box-shadow: none; /* Override general button shadow */
+    }
+    #messageBox button:hover {
+        background: #eee;
+    }
+</style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div class="spinner"></div>
+            Loading Earth and Starlink data...
+        </div>
+        
+        <div id="controls">
+            <h3>🛰️ Starlink Tracker</h3>
+            
+            <div class="control-group">
+                <button id="toggleStarlink" class="active">Show Starlink</button>
+                <button id="toggleOrbits">Show Orbits</button>
+                <button id="toggleLabels">Show List</button>
+                <button id="toggleTrails">Show Trails</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Satellite Size:</label>
+                <button onclick="setSatelliteSize(0.5, this)">Small</button>
+                <button onclick="setSatelliteSize(1, this)" class="active">Medium</button>
+                <button onclick="setSatelliteSize(2, this)">Large</button>
+            </div>
+            
+            <div class="control-group">
+                <button onclick="focusOnStarlink()">Focus Constellation</button>
+                <button onclick="resetView()">Reset View</button>
+            </div>
+        </div>
+        
+        <div id="stats">
+            <h4>Live Stats</h4>
+            <div class="stat-item">
+                <span>Active Satellites:</span>
+                <span class="stat-value" id="activeSats">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Avg Altitude:</span>
+                <span class="stat-value" id="avgAlt">0 km</span>
+            </div>
+            <div class="stat-item">
+                <span>Coverage:</span>
+                <span class="stat-value" id="coverage">0%</span>
+            </div>
+            <div class="stat-item">
+                <span>Update Rate:</span>
+                <span class="stat-value">Real-time</span>
+            </div>
+        </div>
+
+        <div id="satelliteList">
+            <h4>🛰️ Satellite List</h4>
+            <div id="satelliteListContent"></div>
+        </div>
+
+        <div id="satelliteDetails">
+            <h4>📡 Satellite Details</h4>
+            <div id="satelliteDetailsContent">
+                <p>Click on a satellite to view details</p>
+            </div>
+        </div>
+
+        <div id="legend">
+            <h4>Legend</h4>
+            <div class="legend-item">
+                <div class="legend-dot active"></div>
+                <span>Active Satellite</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot inactive"></div>
+                <span>Inactive Satellite</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Box for non-alert notifications -->
+    <div id="messageBox">
+        <p id="messageBoxText"></p>
+        <button onclick="hideMessageBox()">OK</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, earth, earthGroup;
+        let satellites = [];
+        let orbitPaths = [];
+        let satelliteTrails = [];
+        let raycaster, mouse;
+        let selectedSatellite = null;
+        let starlinkVisible = true;
+        let orbitsVisible = false;
+        let labelsVisible = false; /* Controls visibility of the satellite list and labels */
+        let trailsVisible = false;
+        let satelliteSize = 1; /* Default medium size for satellites */
+        let isAnimating = false; /* Flag to control animation loop start/stop */
+
+        /* Constants for visualization scaling and detail */
+        const EARTH_RADIUS = 100; /* Radius of Earth in Three.js units */
+        // IMPORTANT CHANGE: Increased SCALE_FACTOR to visually separate satellites from Earth
+        const SCALE_FACTOR = 0.1; /* Scales real-world altitude (km) to Three.js units */
+        const TRAIL_LENGTH = 50; /* Number of points in the satellite trail */
+        
+        /* Array to store real Starlink data fetched from TLEs */
+        let realStarlinkData = [];
+
+        /**
+         * Displays a custom message box to the user (replaces alert()).
+         * @param {string} message - The message to display.
+         */
+        function showMessageBox(message) {
+            const messageBox = document.getElementById('messageBox');
+            const messageBoxText = document.getElementById('messageBoxText');
+            messageBoxText.textContent = message;
+            messageBox.style.display = 'block';
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+
+        /**
+         * Fetches Starlink TLE data from Celestrak.
+         * This is the source of real-time satellite orbital parameters.
+         * @returns {Promise<string|null>} The TLE data as a string, or null if fetching fails.
+         */
+        async function fetchStarlinkTLEs() {
+            try {
+                const response = await fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - Could not retrieve TLE data.`);
+                }
+                const tleText = await response.text();
+                return tleText;
+            } catch (error) {
+                console.error("Failed to fetch Starlink TLEs:", error);
+                showMessageBox("Failed to load Starlink data. Please check your internet connection or try again later.");
+                document.getElementById('loading').style.display = 'none'; /* Hide loading on error */
+                return null;
+            }
+        }
+
+        /**
+         * Parses raw TLE text into a structured array of satellite objects.
+         * @param {string} tleText - The TLE data as a string (multi-line).
+         * @returns {Array<Object>} An array of objects, each representing a satellite.
+         */
+        function parseTLEs(tleText) {
+            const lines = tleText.trim().split('\n');
+            const satellites = [];
+            /* TLEs are in blocks of 3 lines: Satellite Name, TLE Line 1, TLE Line 2 */
+            for (let i = 0; i < lines.length; i += 3) {
+                const name = lines[i].trim();
+                const tle1 = lines[i + 1];
+                const tle2 = lines[i + 2];
+                satellites.push({ name, tle1, tle2 });
+            }
+            return satellites;
+        }
+
+        /**
+         * Calculates the geodetic position (latitude, longitude, altitude) of a satellite
+         * for a given date using the satellite.js library (SGP4 propagation).
+         * @param {object} satrec - Satellite record object from satellite.js.
+         * @param {Date} date - The specific date and time for position calculation.
+         * @returns {object|null} An object with latitude (degrees), longitude (degrees),
+         * and altitude (km), or null if propagation fails.
+         */
+        function getSatPosition(satrec, date) {
+            const positionAndVelocity = satellite.propagate(satrec, date);
+            const positionEci = positionAndVelocity.position;
+            
+            if (!positionEci) {
+                return null; /* Return null if propagation fails (e.g., satellite decayed) */
+            }
+
+            const gmst = satellite.gstime(date); /* Greenwich Mean Sidereal Time */
+            const positionGd = satellite.eciToGeodetic(positionEci, gmst); /* Convert ECI to Geodetic */
+            
+            return {
+                latitude: satellite.degreesLat(positionGd.latitude), /* Convert radians to degrees */
+                longitude: satellite.degreesLong(positionGd.longitude), /* Convert radians to degrees */
+                altitude: positionGd.height /* Altitude in kilometers */
+            };
+        }
+
+        /**
+         * Loads and processes real Starlink TLE data from Celestrak.
+         * This function orchestrates data fetching, parsing, and initial position calculation.
+         */
+        async function loadRealStarlinkData() {
+            document.getElementById('loading').style.display = 'block'; /* Show loading indicator */
+            const tleText = await fetchStarlinkTLEs();
+            if (!tleText) {
+                return; /* Stop if TLE fetching failed; error message already displayed */
+            }
+            
+            const tleSatellites = parseTLEs(tleText);
+            const now = new Date();
+            
+            realStarlinkData = tleSatellites.map(sat => {
+                const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
+                const pos = getSatPosition(satrec, now);
+                
+                if (!pos) {
+                    /* Log a warning for individual satellites that can't be propagated */
+                    // console.warn(`Could not propagate position for ${sat.name}. Skipping.`);
+                    return null; 
+                }
+
+                return {
+                    id: sat.name,
+                    name: sat.name,
+                    latitude: pos.latitude,
+                    longitude: pos.longitude,
+                    altitude: pos.altitude,
+                    /* Approximate velocity using mean motion; for more accuracy, propagate velocity too */
+                    velocity: satrec.no * 60 / (2 * Math.PI) * 6371.0 / 60, 
+                    status: 'active', /* Assuming active unless specified otherwise */
+                    inclination: satrec.inclo * (180 / Math.PI), /* Convert inclination to degrees */
+                    tle1: sat.tle1,
+                    tle2: sat.tle2
+                };
+            }).filter(Boolean); /* Remove any null entries from failed propagations */
+            
+            /* After data is loaded and processed, initialize the Three.js scene elements */
+            initSceneElements();
+            
+            document.getElementById('loading').style.display = 'none'; /* Hide loading indicator */
+            isAnimating = true; /* Allow the animation loop to start */
+            animate(); /* Start the main animation loop */
+        }
+
+        /**
+         * Initializes the Three.js scene, camera, renderer, and adds a starry background.
+         */
+        function init() {
+            /* Scene setup */
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000008); /* Deep space background color */
+            
+            /* Camera setup: PerspectiveCamera(FOV, Aspect Ratio, Near Clip, Far Clip) */
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
+            camera.position.set(0, 0, 300); /* Initial camera distance */
+            camera.lookAt(0, 0, 0); /* Point camera at the origin (Earth's center) */
+            
+            /* Renderer setup */
+            renderer = new THREE.WebGLRenderer({ antialias: true }); /* Enable anti-aliasing */
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; /* Enable shadows in the scene */
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; /* Use soft shadows */
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            /* Raycaster for detecting mouse clicks on 3D objects */
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2(); /* Normalized device coordinates for mouse */
+            
+            /* Scene Lighting */
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.3); /* Soft, overall light */
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1); /* Main directional light (simulating the sun) */
+            sunLight.position.set(500, 200, 500); /* Position of the "sun" */
+            sunLight.castShadow = true; /* Enable this light to cast shadows */
+            sunLight.shadow.mapSize.width = 2048; /* Shadow map resolution for quality */
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+            
+            /* Create a starry background for realism */
+            createStarField();
+            
+            /* Set up UI controls and event listeners for interaction */
+            setupControls();
+
+            /* Start loading real data; scene elements will be added after data is ready */
+            loadRealStarlinkData();
+        }
+
+        /**
+         * Creates a background star field using Three.js Points.
+         */
+        function createStarField() {
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 }); /* White points */
+            
+            const starsVertices = [];
+            /* Generate random positions for 1000 stars */
+            for (let i = 0; i < 1000; i++) {
+                const radius = 2000; /* Max distance for stars from origin */
+                const x = (Math.random() - 0.5) * radius * 2;
+                const y = (Math.random() - 0.5) * radius * 2;
+                const z = (Math.random() - 0.5) * radius * 2;
+                starsVertices.push(x, y, z);
+            }
+            
+            starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+            const stars = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(stars);
+        }
+
+        /**
+         * Initializes 3D objects related to Earth and satellites after real data is loaded.
+         */
+        function initSceneElements() {
+            createEarth();
+            /* IMPORTANT: Satellites, trails, and orbits are added as children of earthGroup
+               to ensure they rotate with the Earth, creating the orbiting effect. */
+            createStarlinkSatellites(); 
+            createOrbitPaths(); 
+            populateSatelliteList(); /* Populate the HTML sidebar list */
+            updateStats(); /* Update statistics in the UI */
+        }
+        
+        /**
+         * Creates the Earth 3D model with a texture map and an atmospheric glow.
+         */
+        function createEarth() {
+            earthGroup = new THREE.Group(); /* A group to contain Earth and its atmosphere */
+            const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64); /* Detailed sphere geometry */
+
+            // IMPORTANT CHANGE: Using earth.jpg from the same directory
+            const earthTextureUrl = 'earth.jpg'; 
+            
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(earthTextureUrl, function(earthTexture) {
+                const earthMaterial = new THREE.MeshPhongMaterial({
+                    map: earthTexture, /* Apply the loaded texture */
+                    shininess: 30, /* Controls glossiness */
+                    specular: 0x222222 /* Color of specular highlights */
+                });
+
+                earth = new THREE.Mesh(earthGeometry, earthMaterial);
+                earth.receiveShadow = true; /* Earth can receive shadows from other objects */
+                earthGroup.add(earth); /* Add the Earth mesh to its group */
+
+                /* Atmosphere effect using a ShaderMaterial */
+                const atmosphereGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.05, 32, 32); /* Slightly larger sphere */
+                const atmosphereMaterial = new THREE.ShaderMaterial({
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            /* Calculate intensity based on camera angle relative to normal */
+                            float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity; /* Blueish glow color */
+                        }
+                    `,
+                    blending: THREE.AdditiveBlending, /* Additive blending for light effects */
+                    side: THREE.BackSide, /* Render from the inside of the sphere for outer glow */
+                    transparent: true /* Enable transparency for the glow */
+                });
+                const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+                earthGroup.add(atmosphere); /* Add atmosphere to the Earth group */
+
+                scene.add(earthGroup); /* Add the entire Earth group to the scene */
+            }, undefined, function(err) {
+                /* Error handling for texture loading */
+                console.error("Failed to load Earth texture:", err);
+                showMessageBox("Error loading Earth texture. Please ensure 'earth.jpg' is in the same directory.");
+            });
+        }
+        
+        /**
+         * Creates and adds orbit paths for each satellite.
+         * These are simplified circles rotated to the satellite's inclination.
+         */
+        function createOrbitPaths() {
+            orbitPaths = []; /* Clear any existing orbit paths */
+            realStarlinkData.forEach((satData) => {
+                const orbitGroup = new THREE.Group();
+                const orbitPoints = [];
+                const segments = 128; /* Number of segments for a smooth circle */
+                /* Calculate orbit radius based on Earth radius and scaled satellite altitude */
+                const radius = EARTH_RADIUS + (satData.altitude * SCALE_FACTOR); 
+
+                /* Generate points for a circle in the XY plane */
+                for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * Math.PI * 2;
+                    const x = radius * Math.cos(angle);
+                    const y = 0; 
+                    const z = radius * Math.sin(angle);
+                    orbitPoints.push(x, y, z);
+                }
+                const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
+                    orbitPoints.map(p => new THREE.Vector3(p[0], p[1], p[2]))
+                );
+
+                const orbitMaterial = new THREE.LineBasicMaterial({
+                    color: satData.status === 'active' ? 0x00ff88 : 0xff4444, /* Color based on status */
+                    transparent: true,
+                    opacity: 0.1 /* Faint, semi-transparent line */
+                });
+                const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+
+                /* Apply inclination to the orbit path */
+                orbitLine.rotation.x = satData.inclination * Math.PI / 180; 
+                /* Add a random rotation around Y to simulate different ascending nodes for visual variety */
+                orbitLine.rotation.y = Math.random() * Math.PI * 2; 
+
+                orbitGroup.add(orbitLine);
+                orbitGroup.visible = orbitsVisible; /* Set initial visibility based on control */
+                earthGroup.add(orbitGroup); /* IMPORTANT: Add orbit paths to the earthGroup */
+                orbitPaths.push(orbitGroup);
+            });
+        }
+        
+        /**
+         * Creates and adds the 3D meshes for each Starlink satellite.
+         */
+        function createStarlinkSatellites() {
+            satellites = []; /* Clear any existing satellite meshes */
+            satelliteTrails = []; /* Clear any existing trails */
+
+            realStarlinkData.forEach((satData, index) => {
+                const satellite = createSatellite(satData, index);
+                satellites.push(satellite);
+                earthGroup.add(satellite.group); /* IMPORTANT: Add satellites to the earthGroup */
+                
+                /* Create and add a trail for each satellite */
+                const trail = createSatelliteTrail(satData);
+                satelliteTrails.push(trail);
+                earthGroup.add(trail.group); /* IMPORTANT: Add trails to the earthGroup */
+            });
+        }
+        
+        /**
+         * Creates a single 3D satellite object, represented by a glowing dot.
+         * @param {object} satData - The data object for the satellite.
+         * @param {number} index - The index of the satellite in the data array.
+         * @returns {object} An object containing the Three.js group for the satellite, its data, and meshes.
+         */
+        function createSatellite(satData, index) {
+            const group = new THREE.Group(); /* Group to hold the dot and glow meshes */
+            
+            /* Main dot representation of the satellite */
+            const dotGeometry = new THREE.SphereGeometry(1.5, 8, 6); /* Small sphere geometry */
+            const dotMaterial = new THREE.MeshBasicMaterial({ 
+                color: satData.status === 'active' ? 0x00ff88 : 0xff4444, /* Color based on status */
+                transparent: true,
+                opacity: 0.9
+            });
+            const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+            group.add(dot);
+            
+            /* Faint glow effect around the satellite */
+            const glowGeometry = new THREE.SphereGeometry(2.5, 8, 6); /* Slightly larger sphere for glow */
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: satData.status === 'active' ? 0x00ff88 : 0xff4444,
+                transparent: true,
+                opacity: 0.15, /* Faint opacity */
+                blending: THREE.AdditiveBlending /* Additive blending for glow effect */
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            group.add(glow);
+            
+            /* Set initial 3D position based on real-world latitude, longitude, and altitude */
+            const position = latLonToPosition(satData.latitude, satData.longitude, satData.altitude);
+            group.position.copy(position);
+            
+            /* Apply initial size scaling based on user preference */
+            group.scale.setScalar(satelliteSize);
+            group.visible = starlinkVisible; /* Set initial visibility */
+
+            return {
+                group: group, /* The main Three.js group for the satellite */
+                data: satData, /* Original satellite data */
+                dot: dot, /* The primary visual mesh */
+                glow: glow, /* The glow mesh */
+                index: index /* Its index for easy lookup */
+            };
+        }
+        
+        /**
+         * Creates a visual trail behind a satellite as it moves.
+         * @param {object} satData - The satellite's data.
+         * @returns {object} An object containing the trail's Three.js group, points, and geometry.
+         */
+        function createSatelliteTrail(satData) {
+            const group = new THREE.Group();
+            const trailPoints = [];
+            
+            /* Initialize trail with the current position repeated 'TRAIL_LENGTH' times */
+            const currentPos = latLonToPosition(satData.latitude, satData.longitude, satData.altitude);
+            for (let i = 0; i < TRAIL_LENGTH; i++) {
+                trailPoints.push(currentPos.clone()); 
+            }
+            
+            const trailGeometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = []; 
+            const baseColor = new THREE.Color(
+                satData.status === 'active' ? 0x00ff88 : 0xff4444
+            );
+
+            for (let i = 0; i < trailPoints.length; i++) {
+                const point = trailPoints[i];
+                positions.push(point.x, point.y, point.z);
+                const alpha = i / TRAIL_LENGTH; 
+                colors.push(baseColor.r, baseColor.g, baseColor.b, alpha); /* RGBA for fading */
+            }
+            
+            trailGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            trailGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); 
+            trailGeometry.attributes.position.needsUpdate = true; /* Mark geometry for update */
+            trailGeometry.attributes.color.needsUpdate = true; /* Mark colors for update */
+            
+            const trailMaterial = new THREE.LineBasicMaterial({
+                vertexColors: true, /* Use colors provided in geometry attributes */
+                transparent: true,
+                opacity: 0.8 /* Base opacity for the trail */
+            });
+            
+            const trailLine = new THREE.Line(trailGeometry, trailMaterial);
+            group.add(trailLine);
+            group.visible = trailsVisible; /* Set initial visibility */
+            
+            return {
+                group: group, /* The Three.js group for the trail */
+                points: trailPoints, /* Array storing historical positions */
+                geometry: trailGeometry, /* The geometry to be updated */
+                line: trailLine /* The Three.js line object */
+            };
+        }
+        
+        /**
+         * Populates the HTML sidebar list with satellite names.
+         */
+        function populateSatelliteList() {
+            const listContent = document.getElementById('satelliteListContent');
+            listContent.innerHTML = ''; /* Clear existing list content */
+            realStarlinkData.forEach((satData, index) => {
+                const item = document.createElement('div');
+                item.className = 'satellite-item';
+                item.dataset.index = index; /* Store index for easy reference */
+                const statusDot = document.createElement('div');
+                statusDot.className = `satellite-status-dot ${satData.status}`; /* Visual status indicator */
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = satData.name;
+                item.appendChild(statusDot);
+                item.appendChild(nameSpan);
+                item.addEventListener('click', () => selectSatellite(index)); /* Add click listener */
+                listContent.appendChild(item);
+            });
+        }
+        
+        /**
+         * Handles satellite selection: updates UI list, shows details, and highlights in 3D.
+         * @param {number} index - The index of the selected satellite.
+         */
+        function selectSatellite(index) {
+            /* Remove 'selected' class from all list items */
+            document.querySelectorAll('.satellite-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            /* Add 'selected' class to the clicked item */
+            const selectedItem = document.querySelector(`[data-index="${index}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+            }
+            
+            selectedSatellite = satellites[index]; /* Store reference to the selected satellite object */
+            showSatelliteDetails(satellites[index].data); /* Display its details in the panel */
+            
+            highlightSatellite(index); /* Apply visual highlight in the 3D scene */
+        }
+        
+        /**
+         * Displays detailed information about a selected satellite in the UI panel.
+         * @param {object} satData - The data of the satellite to display.
+         */
+        function showSatelliteDetails(satData) {
+            const detailsContent = document.getElementById('satelliteDetailsContent');
+            /* Populate the details panel with formatted satellite information */
+            detailsContent.innerHTML = `
+                <div class="detail-item">
+                    <span>Name:</span>
+                    <span class="detail-value">${satData.name}</span>
+                </div>
+                <div class="detail-item">
+                    <span>Status:</span>
+                    <span class="detail-value">${satData.status.toUpperCase()}</span>
+                </div>
+                <div class="detail-item">
+                    <span>Altitude:</span>
+                    <span class="detail-value">${satData.altitude.toFixed(1)} km</span>
+                </div>
+                <div class="detail-item">
+                    <span>Inclination:</span>
+                    <span class="detail-value">${satData.inclination.toFixed(1)}°</span>
+                </div>
+                <div class="detail-item">
+                    <span>Velocity:</span>
+                    <span class="detail-value">${satData.velocity.toFixed(2)} km/s</span>
+                </div>
+                <div class="detail-item">
+                    <span>Latitude:</span>
+                    <span class="detail-value">${satData.latitude.toFixed(2)}°</span>
+                </div>
+                <div class="detail-item">
+                    <span>Longitude:</span>
+                    <span class="detail-value">${satData.longitude.toFixed(2)}°</span>
+                </div>
+            `;
+            
+            document.getElementById('satelliteDetails').style.display = 'block'; /* Make the details panel visible */
+        }
+        
+        /**
+         * Visually highlights a specific satellite in the 3D scene and dims others.
+         * @param {number} index - The index of the satellite to highlight.
+         */
+        function highlightSatellite(index) {
+            satellites.forEach((sat, i) => {
+                if (i === index) {
+                    /* Highlight selected satellite: stronger glow, slightly emissive dot */
+                    sat.dot.material.emissive.setHex(0x444444); 
+                    sat.glow.material.opacity = 0.4; 
+                    sat.glow.material.color.setHex(0x00ff88); 
+                } else {
+                    /* Dim other satellites: no emissive light, normal glow opacity */
+                    sat.dot.material.emissive.setHex(0x000000); 
+                    sat.glow.material.opacity = 0.15;
+                    sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444); 
+                }
+            });
+        }
+        
+        /**
+         * Handles mouse click events on the 3D canvas for satellite selection.
+         * @param {MouseEvent} event - The mouse click event object.
+         */
+        function onMouseClick(event) {
+            /* Normalize mouse coordinates to Three.js NDC (-1 to +1) */
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            /* Update the raycaster with camera and mouse position */
+            raycaster.setFromCamera(mouse, camera);
+            
+            /* Check for intersections with satellite dot meshes */
+            const clickableObjects = satellites.map(sat => sat.dot);
+            const intersects = raycaster.intersectObjects(clickableObjects);
+            
+            if (intersects.length > 0) {
+                /* If a satellite was clicked, find its index and select it */
+                const clickedObject = intersects[0].object;
+                const satelliteIndex = satellites.findIndex(sat => sat.dot === clickedObject);
+                
+                if (satelliteIndex !== -1) {
+                    selectSatellite(satelliteIndex);
+                }
+            } else {
+                /* If nothing was clicked, deselect any active satellite */
+                if (selectedSatellite) {
+                    selectedSatellite = null;
+                    document.querySelectorAll('.satellite-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    document.getElementById('satelliteDetails').style.display = 'none'; 
+                    /* Reset highlighting for all satellites */
+                    satellites.forEach(sat => {
+                        sat.dot.material.emissive.setHex(0x000000);
+                        sat.glow.material.opacity = 0.15;
+                        sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444);
+                    });
+                }
+            }
+        }
+        
+        /**
+         * Updates the positions and fading of satellite trails in the 3D scene.
+         */
+        function updateTrails() {
+            satelliteTrails.forEach((trail, index) => {
+                /* Only update if trails are visible and the corresponding satellite exists */
+                if (!trailsVisible || !satellites[index]) return;
+                
+                const satellite = satellites[index];
+                const currentPos = satellite.group.position.clone();
+                
+                /* Add current position to the trail history, remove oldest if exceeding length */
+                trail.points.push(currentPos);
+                if (trail.points.length > TRAIL_LENGTH) {
+                    trail.points.shift();
+                }
+                
+                /* Update the positions and colors in the trail's BufferGeometry */
+                const positions = [];
+                const colors = []; 
+                const baseColor = new THREE.Color(
+                    satellites[index].data.status === 'active' ? 0x00ff88 : 0xff4444
+                );
+
+                for (let i = 0; i < trail.points.length; i++) {
+                    const point = trail.points[i];
+                    positions.push(point.x, point.y, point.z);
+                    const alpha = i / TRAIL_LENGTH; 
+                    colors.push(baseColor.r, baseColor.g, baseColor.b, alpha); /* RGBA for fading */
+                }
+                
+                trail.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                trail.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); 
+                trail.geometry.attributes.position.needsUpdate = true; /* Mark geometry for update */
+                trail.geometry.attributes.color.needsUpdate = true; /* Mark colors for update */
+            });
+        }
+        
+        /**
+         * Converts geographic coordinates (latitude, longitude, altitude) to a Three.js 3D Cartesian position.
+         * @param {number} lat - Latitude in degrees.
+         * @param {number} lon - Longitude in degrees.
+         * @param {number} alt - Altitude in kilometers above Earth's surface.
+         * @returns {THREE.Vector3} The 3D position vector in Three.js scene coordinates.
+         */
+        function latLonToPosition(lat, lon, alt) {
+            /* Convert degrees to radians for mathematical functions */
+            const phi = (90 - lat) * Math.PI / 180; /* Polar angle (from North Pole) */
+            const theta = (lon + 180) * Math.PI / 180; /* Azimuthal angle (from positive X axis) */
+            
+            /* Calculate the effective radius based on Earth and scaled altitude */
+            const radius = EARTH_RADIUS + (alt * SCALE_FACTOR); 
+            
+            /* Convert spherical coordinates to Cartesian (X, Y, Z) coordinates */
+            const x = -(radius * Math.sin(phi) * Math.cos(theta)); /* Negative X for correct map orientation */
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            const y = radius * Math.cos(phi);
+            
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        /**
+         * Sets up all UI control button click handlers and mouse/touch interactions for camera control.
+         */
+        function setupControls() {
+            /* Toggle Starlink satellites visibility */
+            document.getElementById('toggleStarlink').onclick = (event) => {
+                starlinkVisible = !starlinkVisible;
+                satellites.forEach(sat => {
+                    sat.group.visible = starlinkVisible;
+                });
+                event.target.classList.toggle('active');
+            };
+            
+            /* Toggle Orbit Paths visibility */
+            document.getElementById('toggleOrbits').onclick = (event) => {
+                orbitsVisible = !orbitsVisible;
+                orbitPaths.forEach(orbit => {
+                    orbit.visible = orbitsVisible;
+                });
+                event.target.classList.toggle('active');
+            };
+            
+            /* Toggle Satellite List and Details Panel visibility */
+            document.getElementById('toggleLabels').onclick = (event) => {
+                labelsVisible = !labelsVisible;
+                const satelliteList = document.getElementById('satelliteList');
+                satelliteList.style.display = labelsVisible ? 'block' : 'none';
+                document.getElementById('satelliteDetails').style.display = 'none'; /* Hide details if list is hidden */
+                
+                /* Reset selected satellite state when list is toggled */
+                selectedSatellite = null;
+                document.querySelectorAll('.satellite-item').forEach(item => item.classList.remove('selected'));
+                satellites.forEach(sat => { /* Reset 3D highlighting */
+                    sat.dot.material.emissive.setHex(0x000000);
+                    sat.glow.material.opacity = 0.15;
+                    sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444);
+                });
+
+                event.target.classList.toggle('active');
+            };
+            
+            /* Toggle Satellite Trails visibility */
+            document.getElementById('toggleTrails').onclick = (event) => {
+                trailsVisible = !trailsVisible;
+                satelliteTrails.forEach(trail => {
+                    trail.group.visible = trailsVisible;
+                });
+                event.target.classList.toggle('active');
+            };
+            
+            /* Event listener for mouse clicks on the renderer for satellite selection */
+            renderer.domElement.addEventListener('click', onMouseClick);
+            
+            /* Mouse camera controls (rotation of the EarthGroup) */
+            let mouseDown = false;
+            let mouseX = 0;
+            let mouseY = 0;
+            
+            renderer.domElement.addEventListener('mousedown', (event) => {
+                mouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                mouseDown = false;
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (event) => {
+                if (!mouseDown) return;
+                
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                
+                /* Rotate the earthGroup (which contains Earth, satellites, orbits, trails) */
+                earthGroup.rotation.y += deltaX * 1.5; 
+                earthGroup.rotation.x += deltaY * 0.5; 
+                
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            /* Zoom with mouse wheel */
+            renderer.domElement.addEventListener('wheel', (event) => {
+                event.preventDefault(); /* Prevent page scrolling */
+                const zoomSpeed = 0.001; 
+                /* Adjust camera Z position based on wheel delta */
+                camera.position.z += event.deltaY * zoomSpeed * camera.position.z; 
+                
+                /* Clamp zoom distance to prevent extreme zoom in/out */
+                camera.position.z = Math.max(150, Math.min(camera.position.z, 2000));
+                camera.lookAt(0, 0, 0); /* Always look at the center of the scene */
+            });
+
+            /* Touch events for mobile camera rotation */
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+            let isTouching = false;
+
+            renderer.domElement.addEventListener('touchstart', (event) => {
+                if (event.touches.length === 1) {
+                    isTouching = true;
+                    touchStartX = event.touches[0].clientX;
+                    touchStartY = event.touches[0].clientY;
+                    lastTouchX = touchStartX;
+                    lastTouchY = touchStartY;
+                }
+            });
+
+            renderer.domElement.addEventListener('touchmove', (event) => {
+                if (isTouching && event.touches.length === 1) {
+                    const currentTouchX = event.touches[0].clientX;
+                    const currentTouchY = event.touches[0].clientY;
+
+                    const deltaX = currentTouchX - lastTouchX;
+                    const deltaY = currentTouchY - lastTouchY;
+
+                    earthGroup.rotation.y += deltaX * 0.005;
+                    earthGroup.rotation.x += deltaY * 0.005;
+
+                    lastTouchX = currentTouchX;
+                    lastTouchY = currentTouchY;
+                }
+            });
+
+            renderer.domElement.addEventListener('touchend', () => {
+                isTouching = false;
+            });
+        }
+        
+        /**
+         * Sets the visual size of all satellites in the 3D scene.
+         * @param {number} size - The new scaling factor for satellite meshes.
+         * @param {HTMLElement} clickedButton - The button element that was clicked (for 'active' class).
+         */
+        function setSatelliteSize(size, clickedButton) {
+            satelliteSize = size;
+            satellites.forEach(sat => {
+                sat.group.scale.setScalar(size); /* Apply scalar scale to the satellite group */
+            });
+            
+            /* Update 'active' class on size buttons */
+            document.querySelectorAll('#controls .control-group button').forEach(btn => {
+                if (btn.onclick && btn.onclick.toString().includes('setSatelliteSize')) { 
+                    btn.classList.remove('active');
+                }
+            });
+            clickedButton.classList.add('active');
+        }
+        
+        /**
+         * Adjusts the camera to a predefined view that focuses on the satellite constellation.
+         */
+        function focusOnStarlink() {
+            camera.position.set(400, 300, 400); /* Move camera to a position for constellation view */
+            camera.lookAt(0, 0, 0); /* Ensure camera looks at Earth's center */
+        }
+        
+        /**
+         * Resets the camera view and Earth's rotation to their initial states.
+         */
+        function resetView() {
+            camera.position.set(0, 0, 300); /* Reset camera to default position */
+            camera.lookAt(0, 0, 0); /* Reset camera focus */
+            if (earthGroup) {
+                earthGroup.rotation.set(0, 0, 0); /* Reset Earth's rotation */
+            }
+        }
+        
+        /**
+         * Updates the live statistics displayed in the UI panels.
+         */
+        function updateStats() {
+            const activeSats = realStarlinkData.filter(sat => sat.status === 'active').length;
+            const totalAltitude = realStarlinkData.reduce((sum, sat) => sum + sat.altitude, 0);
+            const avgAlt = realStarlinkData.length > 0 ? totalAltitude / realStarlinkData.length : 0;
+            
+            /* Simple placeholder for coverage percentage (real coverage is more complex) */
+            const coverage = Math.min(100, (activeSats / 5000) * 100); 
+            
+            document.getElementById('activeSats').textContent = activeSats;
+            document.getElementById('avgAlt').textContent = Math.round(avgAlt) + ' km';
+            document.getElementById('coverage').textContent = Math.round(coverage) + '%';
+        }
+        
+        /**
+         * The main animation loop for the 3D scene.
+         * This function is called continuously using requestAnimationFrame.
+         */
+        function animate() {
+            if (!isAnimating) return; /* Stop animation if flag is false */
+            requestAnimationFrame(animate); /* Request the next animation frame */
+
+            /* Rotate the entire earthGroup slowly, causing everything attached to it to rotate */
+            if (earthGroup) {
+                earthGroup.rotation.y += 0.0005; /* Adjust rotation speed for the Earth and its children */
+            }
+            
+            /* Update satellite positions based on real-time TLE propagation */
+            const now = new Date();
+            realStarlinkData.forEach((satData, index) => {
+                const satrec = satellite.twoline2satrec(satData.tle1, satData.tle2);
+                const pos = getSatPosition(satrec, now);
+                
+                if (pos && satellites[index]) {
+                    /* Calculate new 3D position and update the satellite's group position */
+                    const position = latLonToPosition(pos.latitude, pos.longitude, pos.altitude);
+                    satellites[index].group.position.copy(position);
+
+                    /* Update satellite data for the UI details panel */
+                    satellites[index].data.latitude = pos.latitude;
+                    satellites[index].data.longitude = pos.longitude;
+                    satellites[index].data.altitude = pos.altitude;
+                    
+                    /* If this satellite is currently selected, refresh its details in the UI */
+                    if (selectedSatellite && selectedSatellite.index === index) {
+                        showSatelliteDetails(satellites[index].data);
+                    }
+                }
+            });
+            
+            updateTrails(); /* Update the visual trails behind the satellites */
+            
+            renderer.render(scene, camera); /* Render the updated scene */
+        }
+        
+        /* Event listener to handle window resizing for responsive canvas */
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        /* Initialize the application once the entire window content has loaded */
+        window.onload = init;
+    </script>
+</body>
+</html>
