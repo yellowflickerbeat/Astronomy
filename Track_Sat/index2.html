@@ -277,69 +277,65 @@
     
     function createEarth() {
       earthGroup = new THREE.Group();
-      
-      // Earth geometry
       const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
-      
-      // Earth material with texture
-      const earthMaterial = new THREE.MeshPhongMaterial({
-        color: 0x2233ff,
-        shininess: 30,
-        specular: 0x222222
+
+      // Load earth.jpg as texture
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load('earth.jpg', function(earthTexture) {
+        const earthMaterial = new THREE.MeshPhongMaterial({
+          map: earthTexture,
+          shininess: 30,
+          specular: 0x222222
+        });
+
+        earth = new THREE.Mesh(earthGeometry, earthMaterial);
+        earth.receiveShadow = true;
+        earthGroup.add(earth);
+
+        // Atmosphere
+        const atmosphereGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.05, 32, 32);
+        const atmosphereMaterial = new THREE.ShaderMaterial({
+          vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vNormal;
+            void main() {
+              float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+              gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+            }
+          `,
+          blending: THREE.AdditiveBlending,
+          side: THREE.BackSide,
+          transparent: true
+        });
+        const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+        earthGroup.add(atmosphere);
+
+        // Add grid lines
+        const gridMaterial = new THREE.LineBasicMaterial({ 
+          color: 0x444444, 
+          transparent: true, 
+          opacity: 0.3 
+        });
+        for (let lat = -80; lat <= 80; lat += 20) {
+          const latGeometry = new THREE.RingGeometry(
+            EARTH_RADIUS * Math.cos(lat * Math.PI / 180), 
+            EARTH_RADIUS * Math.cos(lat * Math.PI / 180) + 0.1, 
+            32
+          );
+          const latLine = new THREE.Line(latGeometry, gridMaterial);
+          latLine.position.y = EARTH_RADIUS * Math.sin(lat * Math.PI / 180);
+          latLine.rotation.x = Math.PI / 2;
+          earthGroup.add(latLine);
+        }
+
+        scene.add(earthGroup);
       });
-      
-      earth = new THREE.Mesh(earthGeometry, earthMaterial);
-      earth.receiveShadow = true;
-      earthGroup.add(earth);
-      
-      // Atmosphere
-      const atmosphereGeometry = new THREE.SphereGeometry(EARTH_RADIUS * 1.05, 32, 32);
-      const atmosphereMaterial = new THREE.ShaderMaterial({
-        vertexShader: `
-          varying vec3 vNormal;
-          void main() {
-            vNormal = normalize(normalMatrix * normal);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vNormal;
-          void main() {
-            float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
-            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
-          }
-        `,
-        blending: THREE.AdditiveBlending,
-        side: THREE.BackSide,
-        transparent: true
-      });
-      
-      const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-      earthGroup.add(atmosphere);
-      
-      // Add grid lines
-      const gridMaterial = new THREE.LineBasicMaterial({ 
-        color: 0x444444, 
-        transparent: true, 
-        opacity: 0.3 
-      });
-      
-      // Latitude lines
-      for (let lat = -80; lat <= 80; lat += 20) {
-        const latGeometry = new THREE.RingGeometry(
-          EARTH_RADIUS * Math.cos(lat * Math.PI / 180), 
-          EARTH_RADIUS * Math.cos(lat * Math.PI / 180) + 0.1, 
-          0, 
-          Math.PI * 2, 
-          32
-        );
-        const latLine = new THREE.Line(latGeometry, gridMaterial);
-        latLine.position.y = EARTH_RADIUS * Math.sin(lat * Math.PI / 180);
-        latLine.rotation.x = Math.PI / 2;
-        earthGroup.add(latLine);
-      }
-      
-      scene.add(earthGroup);
     }
     
     function createStarlinkSatellites() {
