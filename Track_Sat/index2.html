@@ -97,6 +97,126 @@
       color: #00ff88;
       font-weight: bold;
     }
+
+    #legend {
+      position: absolute;
+      bottom: 360px;
+      right: 20px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .legend-dot.active {
+      background: #00ff88;
+    }
+
+    .legend-dot.inactive {
+      background: #ff4444;
+    }
+
+    #satelliteList {
+      position: absolute;
+      left: 20px;
+      bottom: 50px;
+      width: 280px;
+      max-height: 400px;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 10px;
+      color: white;
+      font-size: 11px;
+      z-index: 100;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #satelliteList h4 {
+      margin: 0;
+      padding: 15px;
+      color: #00ff88;
+      border-bottom: 1px solid #333;
+    }
+
+    .satellite-item {
+      padding: 8px 15px;
+      border-bottom: 1px solid #222;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+    }
+
+    .satellite-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .satellite-item.selected {
+      background: rgba(0, 255, 136, 0.2);
+    }
+
+    .satellite-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .satellite-status-dot.active {
+      background: #00ff88;
+    }
+
+    .satellite-status-dot.inactive {
+      background: #ff4444;
+    }
+
+    #satelliteDetails {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 250px;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 10px;
+      color: white;
+      font-size: 12px;
+      z-index: 100;
+      display: none;
+      padding: 15px;
+    }
+
+    #satelliteDetails h4 {
+      margin: 0 0 10px 0;
+      color: #00ff88;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .detail-value {
+      color: #00ff88;
+      font-weight: bold;
+    }
     
     #loading {
       position: absolute;
@@ -122,6 +242,19 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    .satellite-label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      pointer-events: none;
+      z-index: 50;
+      white-space: nowrap;
+      border: 1px solid #00ff88;
+    }
   </style>
 </head>
 <body>
@@ -138,6 +271,7 @@
         <button id="toggleStarlink" class="active">Show Starlink</button>
         <button id="toggleOrbits">Show Orbits</button>
         <button id="toggleLabels">Show Labels</button>
+        <button id="toggleTrails">Show Trails</button>
       </div>
       
       <div class="control-group">
@@ -172,30 +306,59 @@
         <span class="stat-value">Real-time</span>
       </div>
     </div>
+
+    <div id="satelliteList">
+      <h4>🛰️ Satellite List</h4>
+      <div id="satelliteListContent"></div>
+    </div>
+
+    <div id="satelliteDetails">
+      <h4>📡 Satellite Details</h4>
+      <div id="satelliteDetailsContent">
+        <p>Click on a satellite to view details</p>
+      </div>
+    </div>
+
+    <div id="legend">
+      <h4 style="margin: 0 0 10px 0; color: #00ff88;">Legend</h4>
+      <div class="legend-item">
+        <div class="legend-dot active"></div>
+        <span>Active Satellite</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot inactive"></div>
+        <span>Inactive Satellite</span>
+      </div>
+    </div>
   </div>
 
   <script>
     let scene, camera, renderer, earth, earthGroup;
     let satellites = [];
+    let orbitPaths = [];
+    let satelliteTrails = [];
+    let raycaster, mouse;
+    let selectedSatellite = null;
     let starlinkVisible = true;
     let orbitsVisible = false;
     let labelsVisible = false;
+    let trailsVisible = false;
     let satelliteSize = 1;
     
     const EARTH_RADIUS = 100;
-    const SCALE_FACTOR = 0.01; // Scale for satellite positions
+    const SCALE_FACTOR = 0.01;
+    const TRAIL_LENGTH = 20;
     
-    // Mock Starlink data (in real app, fetch from API)
+    // Mock Starlink data
     const mockStarlinkData = generateMockStarlink(100);
     
     function generateMockStarlink(count) {
       const satellites = [];
       for (let i = 0; i < count; i++) {
-        // Starlink satellites orbit at ~550km altitude
-        const altitude = 550 + Math.random() * 100; // km
-        const inclination = 53 + Math.random() * 10; // degrees
+        const altitude = 550 + Math.random() * 100;
+        const inclination = 53 + Math.random() * 10;
         const longitude = Math.random() * 360 - 180;
-        const latitude = (Math.random() - 0.5) * 160; // More spread
+        const latitude = (Math.random() - 0.5) * 160;
         
         satellites.push({
           id: `STARLINK-${i + 1}`,
@@ -203,8 +366,9 @@
           latitude: latitude,
           longitude: longitude,
           altitude: altitude,
-          velocity: 7.5 + Math.random() * 0.5, // km/s
-          status: Math.random() > 0.05 ? 'active' : 'inactive'
+          velocity: 7.5 + Math.random() * 0.5,
+          status: Math.random() > 0.05 ? 'active' : 'inactive',
+          inclination: inclination
         });
       }
       return satellites;
@@ -227,6 +391,10 @@
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.getElementById('container').appendChild(renderer.domElement);
       
+      // Raycaster for mouse picking
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+      
       // Lighting
       const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
       scene.add(ambientLight);
@@ -247,8 +415,14 @@
       // Starlink satellites
       createStarlinkSatellites();
       
+      // Orbit paths
+      createOrbitPaths();
+      
       // Controls
       setupControls();
+      
+      // Populate satellite list
+      populateSatelliteList();
       
       // Hide loading
       document.getElementById('loading').style.display = 'none';
@@ -279,7 +453,7 @@
       earthGroup = new THREE.Group();
       const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
 
-      // Load earth.jpg as texture
+      // Load earth.jpg as texture (must be equirectangular projection)
       const textureLoader = new THREE.TextureLoader();
       textureLoader.load('earth.jpg', function(earthTexture) {
         const earthMaterial = new THREE.MeshPhongMaterial({
@@ -316,39 +490,66 @@
         const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         earthGroup.add(atmosphere);
 
-        // Add grid lines
-        const gridMaterial = new THREE.LineBasicMaterial({ 
-          color: 0x444444, 
-          transparent: true, 
-          opacity: 0.3 
-        });
-        for (let lat = -80; lat <= 80; lat += 20) {
-          const latGeometry = new THREE.RingGeometry(
-            EARTH_RADIUS * Math.cos(lat * Math.PI / 180), 
-            EARTH_RADIUS * Math.cos(lat * Math.PI / 180) + 0.1, 
-            32
-          );
-          const latLine = new THREE.Line(latGeometry, gridMaterial);
-          latLine.position.y = EARTH_RADIUS * Math.sin(lat * Math.PI / 180);
-          latLine.rotation.x = Math.PI / 2;
-          earthGroup.add(latLine);
-        }
-
         scene.add(earthGroup);
+      });
+    }
+    
+    function createOrbitPaths() {
+      mockStarlinkData.forEach((satData, index) => {
+        const orbitGroup = new THREE.Group();
+        
+        // Create orbital path
+        const orbitGeometry = new THREE.BufferGeometry();
+        const orbitPoints = [];
+        const segments = 64;
+        const radius = EARTH_RADIUS + (satData.altitude * SCALE_FACTOR * 2);
+        
+        for (let i = 0; i <= segments; i++) {
+          const angle = (i / segments) * Math.PI * 2;
+          const x = radius * Math.cos(angle);
+          const y = 0;
+          const z = radius * Math.sin(angle);
+          orbitPoints.push(x, y, z);
+        }
+        
+        orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
+        
+        const orbitMaterial = new THREE.LineBasicMaterial({
+          color: satData.status === 'active' ? 0x00ff88 : 0xff4444,
+          transparent: true,
+          opacity: 0.2
+        });
+        
+        const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+        
+        // Rotate orbit based on inclination
+        orbitLine.rotation.x = satData.inclination * Math.PI / 180;
+        orbitLine.rotation.y = Math.random() * Math.PI * 2; // Random rotation around Y axis
+        
+        orbitGroup.add(orbitLine);
+        orbitGroup.visible = orbitsVisible;
+        
+        orbitPaths.push(orbitGroup);
+        scene.add(orbitGroup);
       });
     }
     
     function createStarlinkSatellites() {
       mockStarlinkData.forEach((satData, index) => {
-        const satellite = createSatellite(satData);
+        const satellite = createSatellite(satData, index);
         satellites.push(satellite);
         scene.add(satellite.group);
+        
+        // Create trail for this satellite
+        const trail = createSatelliteTrail(satData);
+        satelliteTrails.push(trail);
+        scene.add(trail.group);
       });
       
       updateStats();
     }
     
-    function createSatellite(satData) {
+    function createSatellite(satData, index) {
       const group = new THREE.Group();
       
       // Simple dot representation
@@ -379,14 +580,199 @@
         group: group,
         data: satData,
         dot: dot,
-        glow: glow
+        glow: glow,
+        index: index
       };
+    }
+    
+    function createSatelliteTrail(satData) {
+      const group = new THREE.Group();
+      const trailPoints = [];
+      
+      // Initialize trail with current position
+      const currentPos = latLonToPosition(satData.latitude, satData.longitude, satData.altitude);
+      for (let i = 0; i < TRAIL_LENGTH; i++) {
+        trailPoints.push(currentPos.clone());
+      }
+      
+      const trailGeometry = new THREE.BufferGeometry();
+      const positions = [];
+      const colors = [];
+      
+      trailPoints.forEach((point, i) => {
+        positions.push(point.x, point.y, point.z);
+        const alpha = i / TRAIL_LENGTH;
+        const color = satData.status === 'active' ? 
+          new THREE.Color(0x00ff88) : new THREE.Color(0xff4444);
+        colors.push(color.r, color.g, color.b);
+      });
+      
+      trailGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      trailGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      
+      const trailMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6
+      });
+      
+      const trailLine = new THREE.Line(trailGeometry, trailMaterial);
+      group.add(trailLine);
+      group.visible = trailsVisible;
+      
+      return {
+        group: group,
+        points: trailPoints,
+        geometry: trailGeometry,
+        line: trailLine
+      };
+    }
+    
+    function populateSatelliteList() {
+      const listContent = document.getElementById('satelliteListContent');
+      listContent.innerHTML = '';
+      
+      mockStarlinkData.forEach((satData, index) => {
+        const item = document.createElement('div');
+        item.className = 'satellite-item';
+        item.dataset.index = index;
+        
+        const statusDot = document.createElement('div');
+        statusDot.className = `satellite-status-dot ${satData.status}`;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = satData.name;
+        
+        item.appendChild(statusDot);
+        item.appendChild(nameSpan);
+        
+        item.addEventListener('click', () => selectSatellite(index));
+        
+        listContent.appendChild(item);
+      });
+    }
+    
+    function selectSatellite(index) {
+      // Clear previous selection
+      document.querySelectorAll('.satellite-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Highlight selected item
+      const selectedItem = document.querySelector(`[data-index="${index}"]`);
+      if (selectedItem) {
+        selectedItem.classList.add('selected');
+      }
+      
+      selectedSatellite = satellites[index];
+      showSatelliteDetails(satellites[index].data);
+      
+      // Highlight satellite in 3D scene
+      highlightSatellite(index);
+    }
+    
+    function showSatelliteDetails(satData) {
+      const detailsContent = document.getElementById('satelliteDetailsContent');
+      detailsContent.innerHTML = `
+        <div class="detail-item">
+          <span>Name:</span>
+          <span class="detail-value">${satData.name}</span>
+        </div>
+        <div class="detail-item">
+          <span>Status:</span>
+          <span class="detail-value">${satData.status.toUpperCase()}</span>
+        </div>
+        <div class="detail-item">
+          <span>Altitude:</span>
+          <span class="detail-value">${satData.altitude.toFixed(1)} km</span>
+        </div>
+        <div class="detail-item">
+          <span>Inclination:</span>
+          <span class="detail-value">${satData.inclination.toFixed(1)}°</span>
+        </div>
+        <div class="detail-item">
+          <span>Velocity:</span>
+          <span class="detail-value">${satData.velocity.toFixed(2)} km/s</span>
+        </div>
+        <div class="detail-item">
+          <span>Latitude:</span>
+          <span class="detail-value">${satData.latitude.toFixed(2)}°</span>
+        </div>
+        <div class="detail-item">
+          <span>Longitude:</span>
+          <span class="detail-value">${satData.longitude.toFixed(2)}°</span>
+        </div>
+      `;
+      
+      document.getElementById('satelliteDetails').style.display = 'block';
+    }
+    
+    function highlightSatellite(index) {
+      // Reset all satellites to normal appearance
+      satellites.forEach((sat, i) => {
+        if (i === index) {
+          // Highlight selected satellite
+          sat.dot.material.emissive.setHex(0x444444);
+          sat.glow.material.opacity = 0.4;
+        } else {
+          // Dim other satellites
+          sat.dot.material.emissive.setHex(0x000000);
+          sat.glow.material.opacity = 0.15;
+        }
+      });
+    }
+    
+    function onMouseClick(event) {
+      // Calculate mouse position in normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Calculate objects intersecting the picking ray
+      const clickableObjects = satellites.map(sat => sat.dot);
+      const intersects = raycaster.intersectObjects(clickableObjects);
+      
+      if (intersects.length > 0) {
+        // Find which satellite was clicked
+        const clickedObject = intersects[0].object;
+        const satelliteIndex = satellites.findIndex(sat => sat.dot === clickedObject);
+        
+        if (satelliteIndex !== -1) {
+          selectSatellite(satelliteIndex);
+        }
+      }
+    }
+    
+    function updateTrails() {
+      satelliteTrails.forEach((trail, index) => {
+        if (!trailsVisible || !satellites[index]) return;
+        
+        const satellite = satellites[index];
+        const currentPos = satellite.group.position.clone();
+        
+        // Add current position to trail
+        trail.points.push(currentPos);
+        if (trail.points.length > TRAIL_LENGTH) {
+          trail.points.shift();
+        }
+        
+        // Update trail geometry
+        const positions = [];
+        trail.points.forEach(point => {
+          positions.push(point.x, point.y, point.z);
+        });
+        
+        trail.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        trail.geometry.attributes.position.needsUpdate = true;
+      });
     }
     
     function latLonToPosition(lat, lon, alt) {
       const phi = (90 - lat) * Math.PI / 180;
       const theta = (lon + 180) * Math.PI / 180;
-      const radius = EARTH_RADIUS + (alt * SCALE_FACTOR * 2); // Increased scale for visibility
+      const radius = EARTH_RADIUS + (alt * SCALE_FACTOR * 2);
       
       const x = radius * Math.sin(phi) * Math.cos(theta);
       const z = radius * Math.sin(phi) * Math.sin(theta);
@@ -406,15 +792,29 @@
       
       document.getElementById('toggleOrbits').onclick = () => {
         orbitsVisible = !orbitsVisible;
-        // Add orbit visualization logic here
+        orbitPaths.forEach(orbit => {
+          orbit.visible = orbitsVisible;
+        });
         document.getElementById('toggleOrbits').classList.toggle('active');
       };
       
       document.getElementById('toggleLabels').onclick = () => {
         labelsVisible = !labelsVisible;
-        // Add label visualization logic here
+        const satelliteList = document.getElementById('satelliteList');
+        satelliteList.style.display = labelsVisible ? 'block' : 'none';
         document.getElementById('toggleLabels').classList.toggle('active');
       };
+      
+      document.getElementById('toggleTrails').onclick = () => {
+        trailsVisible = !trailsVisible;
+        satelliteTrails.forEach(trail => {
+          trail.group.visible = trailsVisible;
+        });
+        document.getElementById('toggleTrails').classList.toggle('active');
+      };
+      
+      // Mouse click for satellite selection
+      renderer.domElement.addEventListener('click', onMouseClick);
       
       // Mouse controls
       let mouseDown = false;
@@ -454,12 +854,10 @@
     
     function setSatelliteSize(size) {
       satelliteSize = size;
-      // Update existing satellites
       satellites.forEach(sat => {
         sat.group.scale.setScalar(size);
       });
       
-      // Update active button
       document.querySelectorAll('#controls button').forEach(btn => {
         btn.classList.remove('active');
       });
@@ -467,7 +865,6 @@
     }
     
     function focusOnStarlink() {
-      // Animate camera to show all Starlink satellites
       camera.position.set(400, 300, 400);
       camera.lookAt(0, 0, 0);
     }
@@ -481,7 +878,7 @@
     function updateStats() {
       const activeSats = satellites.filter(sat => sat.data.status === 'active').length;
       const avgAlt = satellites.reduce((sum, sat) => sum + sat.data.altitude, 0) / satellites.length;
-      const coverage = Math.min(95, (activeSats / 1000) * 100); // Rough estimate
+      const coverage = Math.min(95, (activeSats / 1000) * 100);
       
       document.getElementById('activeSats').textContent = activeSats;
       document.getElementById('avgAlt').textContent = Math.round(avgAlt) + ' km';
@@ -493,37 +890,36 @@
       
       // Rotate Earth slowly
       if (earthGroup) {
-        earthGroup.rotation.y += 0.0005; // Much slower rotation
+        earthGroup.rotation.y += 0.0005;
       }
       
-      // Animate satellites (very subtle orbital motion)
+      // Animate satellites
       satellites.forEach((sat, index) => {
         if (sat.group.visible) {
-          // Very slow, smooth orbital animation
-          const time = Date.now() * 0.00001; // 10x slower
-          const speed = sat.data.velocity * 0.01; // Much slower movement
+          const time = Date.now() * 0.00001;
+          const speed = sat.data.velocity * 0.01;
           
-          // Gentle orbital motion around Earth
           const orbitAxis = new THREE.Vector3(
-            Math.sin(index * 0.1), // Slight variation per satellite
+            Math.sin(index * 0.1),
             1,
             Math.cos(index * 0.1)
           ).normalize();
           
           const currentPos = sat.group.position.clone();
-          const angle = speed * time * 0.1; // Very slow
+          const angle = speed * time * 0.1;
           currentPos.applyAxisAngle(orbitAxis, angle);
           
-          // Keep satellites at proper distance from Earth
           currentPos.normalize().multiplyScalar(EARTH_RADIUS + (sat.data.altitude * SCALE_FACTOR * 2));
           sat.group.position.copy(currentPos);
           
-          // Subtle glow pulse for active satellites
           if (sat.data.status === 'active') {
             sat.glow.material.opacity = 0.1 + 0.05 * Math.sin(time * 2 + index);
           }
         }
       });
+      
+      // Update trails
+      updateTrails();
       
       renderer.render(scene, camera);
     }
@@ -537,33 +933,6 @@
     
     // Initialize when page loads
     init();
-    
-    // API Integration functions (uncomment and modify when ready to use real APIs)
-    /*
-    async function fetchStarlinkData() {
-      try {
-        // Example using N2YO API
-        const response = await fetch('https://api.n2yo.com/rest/v1/satellite/above/41.702/-76.014/0/70/18/&apiKey=YOUR_API_KEY');
-        const data = await response.json();
-        return data.above;
-      } catch (error) {
-        console.error('Error fetching Starlink data:', error);
-        return mockStarlinkData; // Fallback to mock data
-      }
-    }
-    
-    async function fetchTLEData() {
-      try {
-        // Example using Space-Track.org
-        const response = await fetch('https://www.space-track.org/basicspacedata/query/class/tle_latest/ORDINAL/1/OBJECT_NAME/STARLINK~~/format/json');
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching TLE data:', error);
-        return null;
-      }
-    }
-    */
   </script>
 </body>
 </html>
