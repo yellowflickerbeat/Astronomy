@@ -117,7 +117,7 @@
         /* Styles for the legend */
         #legend {
             position: absolute;
-            bottom: 440px; /* Position above satellite details */
+            bottom: 320px; /* Position above satellite details */
             right: 20px;
             z-index: 100;
             background: rgba(0, 0, 0, 0.8);
@@ -147,19 +147,16 @@
             margin-right: 8px;
         }
 
-        .legend-dot.active {
-            background: #00ff88; /* Green for active */
-        }
+        /* Set colors for legend dots */
+        .legend-dot.active { background: #00ff88; } /* Green for active */
+        .legend-dot.inactive { background: #ff4444; } /* Red for inactive */
 
-    .legend-dot.inactive {
-        background: #ff4444; /* Red for inactive */
-    }
 
     /* Styles for the satellite list panel */
     #satelliteList {
         position: absolute;
         left: 20px;
-        bottom: 120px;
+        bottom: 50px;
         width: 280px;
         max-height: 400px; /* Limit height for scrollability */
         background: rgba(0, 0, 0, 0.9);
@@ -214,20 +211,16 @@
         margin-right: 8px;
         flex-shrink: 0;
     }
+    /* Set colors for satellite status dots */
+    .satellite-status-dot.active { background: #00ff88; }
+    .satellite-status-dot.inactive { background: #ff4444; }
 
-    .satellite-status-dot.active {
-        background: #00ff88;
-    }
-
-    .satellite-status-dot.inactive {
-        background: #ff4444;
-    }
 
     /* Styles for the satellite details panel */
     #satelliteDetails {
         position: absolute;
         right: 20px;
-        bottom: 120px;
+        bottom: 20px;
         width: 250px;
         background: rgba(0, 0, 0, 0.9);
         border-radius: 10px;
@@ -319,121 +312,45 @@
         background: #eee;
     }
 
-    /* Styles for the timeline slider */
-    #timeline {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60%;
-        max-width: 600px;
-        background: rgba(0, 0, 0, 0.9);
-        padding: 15px;
-        border-radius: 10px;
-        color: white;
-        z-index: 100;
-        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
-    }
-
-    #timeline h4 {
-        margin: 0 0 10px 0;
-        color: #00ff88;
-        text-shadow: 0 0 5px #00ff88;
-        text-align: center;
-        font-size: 14px;
-    }
-
-    .timeline-controls {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 10px;
-    }
-
-    .timeline-slider {
-        flex: 1;
-        margin: 0 15px;
-        -webkit-appearance: none;
-        appearance: none;
-        height: 4px;
-        border-radius: 2px;
-        background: #333;
-        outline: none;
-        cursor: pointer;
-    }
-
-    .timeline-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #00ff88;
-        cursor: pointer;
-        box-shadow: 0 0 8px #00ff88;
-    }
-
-    .timeline-slider::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #00ff88;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 8px #00ff88;
-    }
-
-    .timeline-date {
-        font-size: 12px;
-        color: #00ff88;
-        font-weight: bold;
-        min-width: 80px;
-        text-align: center;
-    }
-
-    .timeline-stats {
-        display: flex;
-        justify-content: space-around;
-        font-size: 11px;
-        color: #ccc;
-    }
-
-    .timeline-stat {
-        text-align: center;
-    }
-
-    .timeline-stat-value {
-        color: #00ff88;
-        font-weight: bold;
-        font-size: 12px;
-    }
-
-    .playback-controls {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
+    /* Styles for the slider and its label */
+    input[type="range"] {
+        width: 100%;
         margin-top: 10px;
-    }
-
-    .playback-controls button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 8px 12px;
+        -webkit-appearance: none; /* Remove default styling */
+        height: 8px;
+        background: #444; /* Darker track for better visibility */
         border-radius: 5px;
+        outline: none;
+        opacity: 0.8;
+        transition: opacity .2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #00ff88;
         cursor: pointer;
-        font-size: 11px;
-        transition: all 0.3s ease;
+        box-shadow: 0 0 5px #00ff88;
     }
 
-    .playback-controls button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+    input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #00ff88;
+        cursor: pointer;
+        box-shadow: 0 0 5px #00ff88;
     }
 
-    .playback-controls button.active {
-        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-        box-shadow: 0 0 8px #00ff88;
+    #yearDisplay {
+        margin-top: 5px;
+        font-size: 14px;
+        color: #00ff88;
+        text-align: center;
+        font-weight: bold;
     }
 </style>
 </head>
@@ -449,7 +366,8 @@
             
             <div class="control-group">
                 <button id="toggleStarlink" class="active">Show Starlink</button>
-                <button id="toggleOrbits">Show Orbits</button>
+                <button id="showAllStarlinksButton">Show All Starlinks</button> <!-- New Button -->
+                <button id="toggleOrbits">Show Orbits</button><br>
                 <button id="toggleLabels">Show List</button>
                 <button id="toggleTrails">Show Trails</button>
             </div>
@@ -464,6 +382,12 @@
             <div class="control-group">
                 <button onclick="focusOnStarlink()">Focus Constellation</button>
                 <button onclick="resetView()">Reset View</button>
+            </div>
+
+            <div class="control-group">
+                <label for="timelineSlider">Deployment Timeline:</label>
+                <input type="range" id="timelineSlider" min="2019" max="2025" value="2025">
+                <div id="yearDisplay">2025</div>
             </div>
         </div>
         
@@ -503,29 +427,11 @@
             <h4>Legend</h4>
             <div class="legend-item">
                 <div class="legend-dot active"></div>
-                <span>Active Satellite</span>
+                <span>Starlink (Green)</span>
             </div>
             <div class="legend-item">
                 <div class="legend-dot inactive"></div>
-                <span>Inactive Satellite</span>
-            </div>
-        </div>
-
-        <div id="timeline">
-            <h4>🕒 Satellite Deployment Timeline</h4>
-            <div class="timeline-controls">
-                <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="100" value="100">
-                <span id="timelineDate" class="timeline-date">Dec 2024</span>
-            </div>
-            <div class="timeline-stats">
-                <div class="timeline-stat">
-                    <span>Active Satellites:</span>
-                    <span class="timeline-stat-value" id="totalSats">0</span>
-                </div>
-                <div class="timeline-stat">
-                    <span>Coverage:</span>
-                    <span class="timeline-stat-value" id="totalCoverage">0%</span>
-                </div>
+                <span>Inactive Satellite (Red)</span>
             </div>
         </div>
     </div>
@@ -538,33 +444,38 @@
 
     <script>
         let scene, camera, renderer, earth, earthGroup;
-        let satellites = [];
-        let orbitPaths = [];
-        let satelliteTrails = [];
+        let satellites = []; // Stores Three.js satellite objects for Starlink
+        let orbitPaths = []; // Stores Three.js orbit line objects
+        let satelliteTrails = []; // Stores Three.js trail objects
         let raycaster, mouse;
         let selectedSatellite = null;
-        let starlinkVisible = true;
+        let starlinkVisible = true; // Still controls overall Starlink visibility
         let orbitsVisible = false;
-        let labelsVisible = false; /* Controls visibility of the satellite list and labels */
+        let labelsVisible = false; // Controls visibility of the satellite list and labels
         let trailsVisible = false;
-        let satelliteSize = 1; /* Default medium size for satellites */
-        let isAnimating = false; /* Flag to control animation loop start/stop */
+        let satelliteSize = 1; // Default medium size for satellites
+        let isAnimating = false; // Flag to control animation loop start/stop
 
-        /* Timeline variables */
-        let timelineData = []; /* Array to store historical satellite data */
-        let currentTimelineIndex = 0; /* Current position in timeline */
-        let timelineStartDate = new Date('2019-05-24'); /* First Starlink launch */
-        let timelineEndDate = new Date(); /* Current date */
-        let historicalTLEs = []; /* Array to store historical TLE data */
-
-        /* Constants for visualization scaling and detail */
-        const EARTH_RADIUS = 100; /* Radius of Earth in Three.js units */
-        // IMPORTANT CHANGE: Increased SCALE_FACTOR to visually separate satellites from Earth
-        const SCALE_FACTOR = 0.1; /* Scales real-world altitude (km) to Three.js units */
-        const TRAIL_LENGTH = 50; /* Number of points in the satellite trail */
+        // Constants for visualization scaling and detail
+        const EARTH_RADIUS = 100; // Radius of Earth in Three.js units
+        const SCALE_FACTOR = 0.1; // Scales real-world altitude (km) to Three.js units
+        const TRAIL_LENGTH = 50; // Number of points in the satellite trail
         
-        /* Array to store real Starlink data fetched from TLEs */
-        let realStarlinkData = [];
+        // Colors for different satellite types
+        const STARLINK_COLOR = 0x00ff88; // Green
+        const INACTIVE_COLOR = 0xff4444; // Red
+
+        // Define the horizontal offset for the globe (from a previous interaction)
+        const GLOBE_OFFSET_X = 80;
+
+        // Array to store all real Starlink data fetched from TLEs, including launch year
+        let allStarlinkData = []; 
+        // Array to store currently displayed satellites (filtered by timeline AND percentage)
+        let displayedSatellites = []; 
+
+        // New variable for controlling the display percentage of Starlinks
+        // Default to 25% for a less CPU-intensive initial load
+        let currentDisplayPercentage = 0.25; 
 
         /**
          * Displays a custom message box to the user (replaces alert()).
@@ -600,13 +511,14 @@
             } catch (error) {
                 console.error("Failed to fetch Starlink TLEs:", error);
                 showMessageBox("Failed to load Starlink data. Please check your internet connection or try again later.");
-                document.getElementById('loading').style.display = 'none'; /* Hide loading on error */
+                document.getElementById('loading').style.display = 'none'; // Hide loading on error
                 return null;
             }
         }
 
         /**
-         * Parses raw TLE text into a structured array of satellite objects.
+         * Parses raw TLE text into a structured array of satellite objects,
+         * including extracting the launch year.
          * @param {string} tleText - The TLE data as a string (multi-line).
          * @returns {Array<Object>} An array of objects, each representing a satellite.
          */
@@ -618,7 +530,15 @@
                 const name = lines[i].trim();
                 const tle1 = lines[i + 1];
                 const tle2 = lines[i + 2];
-                satellites.push({ name, tle1, tle2 });
+
+                // Extract launch year from TLE line 1 (chars 10-11 for year, 12-14 for day of year)
+                // Example: '98067A' -> year '98', day '067'
+                const launchYearStr = tle1.substring(9, 11);
+                let launchYear = parseInt(launchYearStr, 10);
+                // Adjust for century: if year is >= 57, it's 19xx; otherwise 20xx
+                launchYear = (launchYear < 57) ? (2000 + launchYear) : (1900 + launchYear);
+
+                satellites.push({ name, tle1, tle2, launchYear });
             }
             return satellites;
         }
@@ -651,14 +571,10 @@
 
         /**
          * Loads and processes real Starlink TLE data from Celestrak.
-         * This function orchestrates data fetching, parsing, and initial position calculation.
+         * Stores all satellite data in `allStarlinkData`.
          */
         async function loadRealStarlinkData() {
             document.getElementById('loading').style.display = 'block'; /* Show loading indicator */
-            
-            // Initialize timeline first
-            await initTimeline();
-            
             const tleText = await fetchStarlinkTLEs();
             if (!tleText) {
                 return; /* Stop if TLE fetching failed; error message already displayed */
@@ -667,13 +583,12 @@
             const tleSatellites = parseTLEs(tleText);
             const now = new Date();
             
-            realStarlinkData = tleSatellites.map(sat => {
+            // Populate allStarlinkData with initial positions and launch years
+            allStarlinkData = tleSatellites.map(sat => {
                 const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
                 const pos = getSatPosition(satrec, now);
                 
                 if (!pos) {
-                    /* Log a warning for individual satellites that can't be propagated */
-                    // console.warn(`Could not propagate position for ${sat.name}. Skipping.`);
                     return null; 
                 }
 
@@ -683,21 +598,21 @@
                     latitude: pos.latitude,
                     longitude: pos.longitude,
                     altitude: pos.altitude,
-                    /* Approximate velocity using mean motion; for more accuracy, propagate velocity too */
                     velocity: satrec.no * 60 / (2 * Math.PI) * 6371.0 / 60, 
-                    status: 'active', /* Assuming active unless specified otherwise */
-                    inclination: satrec.inclo * (180 / Math.PI), /* Convert inclination to degrees */
+                    status: 'active', // All Starlinks are currently assumed active from this dataset
+                    inclination: satrec.inclo * (180 / Math.PI), 
                     tle1: sat.tle1,
-                    tle2: sat.tle2
+                    tle2: sat.tle2,
+                    launchYear: sat.launchYear // Store the extracted launch year
                 };
-            }).filter(Boolean); /* Remove any null entries from failed propagations */
+            }).filter(Boolean); // Remove any null entries from failed propagations
             
-            /* After data is loaded and processed, initialize the Three.js scene elements */
+            // Initialize the scene elements and update based on the default slider value and percentage
             initSceneElements();
             
-            document.getElementById('loading').style.display = 'none'; /* Hide loading indicator */
-            isAnimating = true; /* Allow the animation loop to start */
-            animate(); /* Start the main animation loop */
+            document.getElementById('loading').style.display = 'none'; // Hide loading indicator
+            isAnimating = true; // Allow the animation loop to start
+            animate(); // Start the main animation loop
         }
 
         /**
@@ -768,23 +683,20 @@
         }
 
         /**
-         * Initializes 3D objects related to Earth and satellites after real data is loaded.
+         * Initializes 3D objects related to Earth and sets up timeline slider.
+         * The satellites, orbits, and trails are now handled by `updateSatellitesDisplay`.
          */
         function initSceneElements() {
             createEarth();
-            /* IMPORTANT: Satellites, trails, and orbits are added as children of earthGroup
-               to ensure they rotate with the Earth, creating the orbiting effect. */
             
-            // Use timeline data if available, otherwise use current data
-            if (historicalTLEs.length > 0) {
-                updateSatellitesForTimeline();
-            } else {
-                createStarlinkSatellites(); 
+            // Shift the entire earthGroup to the right by GLOBE_OFFSET_X units
+            if (earthGroup) {
+                earthGroup.position.x = GLOBE_OFFSET_X; 
             }
-            
-            createOrbitPaths(); 
-            populateSatelliteList(); /* Populate the HTML sidebar list */
-            updateStats(); /* Update statistics in the UI */
+
+            setupTimelineSlider(); // Set up the new timeline slider
+            // Initial display update for current year and default percentage
+            updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
         }
         
         /**
@@ -794,7 +706,7 @@
             earthGroup = new THREE.Group(); /* A group to contain Earth and its atmosphere */
             const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64); /* Detailed sphere geometry */
 
-            // IMPORTANT CHANGE: Using earth.jpg from the same directory
+            // Using earth.jpg from the same directory
             const earthTextureUrl = 'earth.jpg'; 
             
             const textureLoader = new THREE.TextureLoader();
@@ -841,83 +753,142 @@
                 showMessageBox("Error loading Earth texture. Please ensure 'earth.jpg' is in the same directory.");
             });
         }
-        
+
         /**
-         * Creates and adds orbit paths for each satellite.
-         * These are simplified circles rotated to the satellite's inclination.
+         * Clears all existing satellite meshes, orbits, and trails from the scene.
          */
-        function createOrbitPaths() {
-            orbitPaths = []; /* Clear any existing orbit paths */
-            realStarlinkData.forEach((satData) => {
-                const orbitGroup = new THREE.Group();
-                const orbitPoints = [];
-                const segments = 128; /* Number of segments for a smooth circle */
-                /* Calculate orbit radius based on Earth radius and scaled satellite altitude */
-                const radius = EARTH_RADIUS + (satData.altitude * SCALE_FACTOR); 
-
-                /* Generate points for a circle in the XY plane */
-                for (let i = 0; i <= segments; i++) {
-                    const angle = (i / segments) * Math.PI * 2;
-                    const x = radius * Math.cos(angle);
-                    const y = 0; 
-                    const z = radius * Math.sin(angle);
-                    orbitPoints.push(x, y, z);
+        function clearExistingSatellites() {
+            // Remove Starlink satellite groups
+            satellites.forEach(sat => {
+                if (sat.group.parent) {
+                    sat.group.parent.remove(sat.group);
                 }
-                const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
-                    orbitPoints.map(p => new THREE.Vector3(p[0], p[1], p[2]))
-                );
-
-                const orbitMaterial = new THREE.LineBasicMaterial({
-                    color: satData.status === 'active' ? 0x00ff88 : 0xff4444, /* Color based on status */
-                    transparent: true,
-                    opacity: 0.1 /* Faint, semi-transparent line */
-                });
-                const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
-
-                /* Apply inclination to the orbit path */
-                orbitLine.rotation.x = satData.inclination * Math.PI / 180; 
-                /* Add a random rotation around Y to simulate different ascending nodes for visual variety */
-                orbitLine.rotation.y = Math.random() * Math.PI * 2; 
-
-                orbitGroup.add(orbitLine);
-                orbitGroup.visible = orbitsVisible; /* Set initial visibility based on control */
-                earthGroup.add(orbitGroup); /* IMPORTANT: Add orbit paths to the earthGroup */
-                orbitPaths.push(orbitGroup);
+                sat.dot.geometry.dispose();
+                sat.dot.material.dispose();
+                sat.glow.geometry.dispose();
+                sat.glow.material.dispose();
             });
+            satellites = []; // Clear the array
+
+            // Remove orbit paths (only Starlink now)
+            orbitPaths.forEach(orbit => {
+                if (orbit.parent) {
+                    orbit.parent.remove(orbit);
+                }
+                if (orbit.children[0]) { // Ensure the line mesh exists before disposing
+                    orbit.children[0].geometry.dispose(); // Access the Line's geometry
+                    orbit.children[0].material.dispose(); // Access the Line's material
+                }
+            });
+            orbitPaths = []; // Clear the array
+
+            // Remove satellite trails (only Starlink now)
+            satelliteTrails.forEach(trail => {
+                if (trail.group.parent) {
+                    trail.group.parent.remove(trail.group);
+                }
+                if (trail.geometry) { // Ensure geometry exists before disposing
+                    trail.geometry.dispose();
+                }
+                if (trail.line && trail.line.material) { // Ensure material exists before disposing
+                    trail.line.material.dispose();
+                }
+            });
+            satelliteTrails = []; // Clear the array
         }
         
         /**
-         * Creates and adds the 3D meshes for each Starlink satellite.
+         * Updates the displayed satellites, orbits, and trails based on the selected year
+         * and current display percentage.
+         * @param {number} selectedYear - The year selected on the timeline slider.
          */
-        function createStarlinkSatellites() {
-            satellites = []; /* Clear any existing satellite meshes */
-            satelliteTrails = []; /* Clear any existing trails */
+        function updateSatellitesDisplay(selectedYear) {
+            clearExistingSatellites(); // Clear previous visualization
 
-            realStarlinkData.forEach((satData, index) => {
-                const satellite = createSatellite(satData, index);
-                satellites.push(satellite);
-                earthGroup.add(satellite.group); /* IMPORTANT: Add satellites to the earthGroup */
+            // Filter satellites based on launch year AND random percentage
+            displayedSatellites = allStarlinkData.filter(sat => 
+                sat.launchYear <= selectedYear && Math.random() < currentDisplayPercentage
+            );
+
+            // Recreate and add Three.js objects for filtered satellites
+            displayedSatellites.forEach((satData, index) => {
+                const satellite = createSatellite(satData, index, STARLINK_COLOR);
+                satellites.push(satellite); // Store in dedicated Starlink array
+                earthGroup.add(satellite.group); 
                 
-                /* Create and add a trail for each satellite */
-                const trail = createSatelliteTrail(satData);
+                const trail = createSatelliteTrail(satData, STARLINK_COLOR);
                 satelliteTrails.push(trail);
-                earthGroup.add(trail.group); /* IMPORTANT: Add trails to the earthGroup */
+                earthGroup.add(trail.group); 
+
+                const orbitGroup = createOrbitPath(satData, STARLINK_COLOR);
+                orbitPaths.push(orbitGroup);
+                earthGroup.add(orbitGroup);
             });
+
+            populateSatelliteList(); // Update the HTML list based on displayedSatellites
+            updateStats(); // Update the statistics display
+        }
+        
+        /**
+         * Creates and adds a single orbit path for a given satellite.
+         * This function is now called for each displayed satellite.
+         * @param {object} satData - The satellite data for which to create the orbit.
+         * @param {number} color - The hexadecimal color for the orbit line.
+         * @returns {THREE.Group} The Three.js group containing the orbit line.
+         */
+        function createOrbitPath(satData, color) {
+            const orbitGroup = new THREE.Group();
+            const orbitPoints = [];
+            const segments = 128; // Number of segments for a smoother circle
+            // Radius based on Earth radius + satellite altitude (scaled)
+            const radius = EARTH_RADIUS + (satData.altitude * SCALE_FACTOR); 
+
+            // Generate points for a circle
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = radius * Math.cos(angle);
+                const y = 0; // Simple circle in XY plane initially
+                const z = radius * Math.sin(angle);
+                orbitPoints.push(x, y, z);
+            }
+            // Create a BufferGeometry from the generated points
+            const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
+                orbitPoints.map(p => new THREE.Vector3(p[0], p[1], p[2]))
+            );
+
+            const orbitMaterial = new THREE.LineBasicMaterial({
+                color: color, 
+                transparent: true,
+                opacity: 0.4 // Increased opacity for better visibility
+            });
+            const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+
+            // Rotate the orbit path to match the satellite's inclination
+            // Note: This is a simplification; true orbital mechanics are complex.
+            orbitLine.rotation.x = satData.inclination * Math.PI / 180; // Apply inclination
+            // Random rotation around Y to simulate different ascending nodes (for visual variety)
+            // This is primarily for visual distinction of different orbits, not precise orbital elements.
+            orbitLine.rotation.y = Math.random() * Math.PI * 2; 
+
+            orbitGroup.add(orbitLine);
+            orbitGroup.visible = orbitsVisible; // Initial visibility
+            return orbitGroup;
         }
         
         /**
          * Creates a single 3D satellite object, represented by a glowing dot.
          * @param {object} satData - The data object for the satellite.
-         * @param {number} index - The index of the satellite in the data array.
+         * @param {number} index - The index of the satellite in its respective data array.
+         * @param {number} color - The hexadecimal color for the satellite.
          * @returns {object} An object containing the Three.js group for the satellite, its data, and meshes.
          */
-        function createSatellite(satData, index) {
+        function createSatellite(satData, index, color) {
             const group = new THREE.Group(); /* Group to hold the dot and glow meshes */
             
             /* Main dot representation of the satellite */
             const dotGeometry = new THREE.SphereGeometry(1.5, 8, 6); /* Small sphere geometry */
             const dotMaterial = new THREE.MeshBasicMaterial({ 
-                color: satData.status === 'active' ? 0x00ff88 : 0xff4444, /* Color based on status */
+                color: color, /* Use the provided color */
                 transparent: true,
                 opacity: 0.9
             });
@@ -927,7 +898,7 @@
             /* Faint glow effect around the satellite */
             const glowGeometry = new THREE.SphereGeometry(2.5, 8, 6); /* Slightly larger sphere for glow */
             const glowMaterial = new THREE.MeshBasicMaterial({
-                color: satData.status === 'active' ? 0x00ff88 : 0xff4444,
+                color: color, /* Use the provided color for glow as well */
                 transparent: true,
                 opacity: 0.15, /* Faint opacity */
                 blending: THREE.AdditiveBlending /* Additive blending for glow effect */
@@ -941,23 +912,25 @@
             
             /* Apply initial size scaling based on user preference */
             group.scale.setScalar(satelliteSize);
-            group.visible = starlinkVisible; /* Set initial visibility */
+            group.visible = starlinkVisible; // Visibility controlled by parent toggle
 
             return {
                 group: group, /* The main Three.js group for the satellite */
                 data: satData, /* Original satellite data */
                 dot: dot, /* The primary visual mesh */
                 glow: glow, /* The glow mesh */
-                index: index /* Its index for easy lookup */
+                index: index, /* Its index for easy lookup in the displayedSatellites array */
+                type: 'starlink' // Explicitly mark as Starlink
             };
         }
         
         /**
          * Creates a visual trail behind a satellite as it moves.
          * @param {object} satData - The satellite's data.
+         * @param {number} color - The hexadecimal color for the trail.
          * @returns {object} An object containing the trail's Three.js group, points, and geometry.
          */
-        function createSatelliteTrail(satData) {
+        function createSatelliteTrail(satData, color) {
             const group = new THREE.Group();
             const trailPoints = [];
             
@@ -970,9 +943,7 @@
             const trailGeometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = []; 
-            const baseColor = new THREE.Color(
-                satData.status === 'active' ? 0x00ff88 : 0xff4444
-            );
+            const baseColor = new THREE.Color(color);
 
             for (let i = 0; i < trailPoints.length; i++) {
                 const point = trailPoints[i];
@@ -1006,16 +977,18 @@
         
         /**
          * Populates the HTML sidebar list with satellite names.
+         * Now uses `displayedSatellites`.
          */
         function populateSatelliteList() {
             const listContent = document.getElementById('satelliteListContent');
             listContent.innerHTML = ''; /* Clear existing list content */
-            realStarlinkData.forEach((satData, index) => {
+            displayedSatellites.forEach((satData, index) => { // Use displayedSatellites
                 const item = document.createElement('div');
                 item.className = 'satellite-item';
                 item.dataset.index = index; /* Store index for easy reference */
                 const statusDot = document.createElement('div');
-                statusDot.className = `satellite-status-dot ${satData.status}`; /* Visual status indicator */
+                /* Apply color based on status */
+                statusDot.className = `satellite-status-dot ${satData.status}`; 
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = satData.name;
                 item.appendChild(statusDot);
@@ -1027,7 +1000,8 @@
         
         /**
          * Handles satellite selection: updates UI list, shows details, and highlights in 3D.
-         * @param {number} index - The index of the selected satellite.
+         * Now works with the `displayedSatellites` array.
+         * @param {number} index - The index of the selected satellite within `displayedSatellites`.
          */
         function selectSatellite(index) {
             /* Remove 'selected' class from all list items */
@@ -1042,9 +1016,9 @@
             }
             
             selectedSatellite = satellites[index]; /* Store reference to the selected satellite object */
-            showSatelliteDetails(satellites[index].data); /* Display its details in the panel */
+            showSatelliteDetails(displayedSatellites[index]); /* Use displayedSatellites for details */
             
-            highlightSatellite(index); /* Apply visual highlight in the 3D scene */
+            highlightSatellite(selectedSatellite); // Pass the 3D object for highlighting
         }
         
         /**
@@ -1058,6 +1032,10 @@
                 <div class="detail-item">
                     <span>Name:</span>
                     <span class="detail-value">${satData.name}</span>
+                </div>
+                <div class="detail-item">
+                    <span>Type:</span>
+                    <span class="detail-value">Starlink</span>
                 </div>
                 <div class="detail-item">
                     <span>Status:</span>
@@ -1083,6 +1061,10 @@
                     <span>Longitude:</span>
                     <span class="detail-value">${satData.longitude.toFixed(2)}°</span>
                 </div>
+                ${satData.launchYear ? `<div class="detail-item">
+                    <span>Launch Year:</span>
+                    <span class="detail-value">${satData.launchYear}</span>
+                </div>` : ''}
             `;
             
             document.getElementById('satelliteDetails').style.display = 'block'; /* Make the details panel visible */
@@ -1090,20 +1072,23 @@
         
         /**
          * Visually highlights a specific satellite in the 3D scene and dims others.
-         * @param {number} index - The index of the satellite to highlight.
+         * @param {object} highlightedSat - The 3D satellite object to highlight.
          */
-        function highlightSatellite(index) {
-            satellites.forEach((sat, i) => {
-                if (i === index) {
+        function highlightSatellite(highlightedSat) {
+            // Iterate over all currently displayed satellites
+            satellites.forEach((sat) => {
+                if (sat === highlightedSat) {
                     /* Highlight selected satellite: stronger glow, slightly emissive dot */
                     sat.dot.material.emissive.setHex(0x444444); 
                     sat.glow.material.opacity = 0.4; 
-                    sat.glow.material.color.setHex(0x00ff88); 
+                    sat.glow.material.color.setHex(STARLINK_COLOR); /* Highlight with a consistent green */
                 } else {
-                    /* Dim other satellites: no emissive light, normal glow opacity */
+                    /* Dim other satellites: reset to their original color and normal opacity */
+                    const originalColor = sat.data.status === 'active' ? STARLINK_COLOR : INACTIVE_COLOR;
                     sat.dot.material.emissive.setHex(0x000000); 
+                    sat.dot.material.color.setHex(originalColor); 
                     sat.glow.material.opacity = 0.15;
-                    sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444); 
+                    sat.glow.material.color.setHex(originalColor); 
                 }
             });
         }
@@ -1120,17 +1105,21 @@
             /* Update the raycaster with camera and mouse position */
             raycaster.setFromCamera(mouse, camera);
             
-            /* Check for intersections with satellite dot meshes */
-            const clickableObjects = satellites.map(sat => sat.dot);
-            const intersects = raycaster.intersectObjects(clickableObjects);
+            /* Get all visible satellite dot meshes for intersection testing */
+            const allVisibleDots = satellites.map(s => s.dot);
+
+            const intersects = raycaster.intersectObjects(allVisibleDots);
             
             if (intersects.length > 0) {
-                /* If a satellite was clicked, find its index and select it */
                 const clickedObject = intersects[0].object;
-                const satelliteIndex = satellites.findIndex(sat => sat.dot === clickedObject);
-                
-                if (satelliteIndex !== -1) {
-                    selectSatellite(satelliteIndex);
+                const foundSat = satellites.find(s => s.dot === clickedObject);
+
+                if (foundSat) {
+                    // Find its index in the displayed list for selecting
+                    const displayedIndex = displayedSatellites.findIndex(s => s.id === foundSat.data.id);
+                    if (displayedIndex !== -1) {
+                         selectSatellite(displayedIndex);
+                    }
                 }
             } else {
                 /* If nothing was clicked, deselect any active satellite */
@@ -1140,11 +1129,13 @@
                         item.classList.remove('selected');
                     });
                     document.getElementById('satelliteDetails').style.display = 'none'; 
-                    /* Reset highlighting for all satellites */
+                    /* Reset highlighting for all satellites to their original colors */
                     satellites.forEach(sat => {
+                        const originalColor = sat.data.status === 'active' ? STARLINK_COLOR : INACTIVE_COLOR;
                         sat.dot.material.emissive.setHex(0x000000);
+                        sat.dot.material.color.setHex(originalColor);
                         sat.glow.material.opacity = 0.15;
-                        sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444);
+                        sat.glow.material.color.setHex(originalColor);
                     });
                 }
             }
@@ -1152,14 +1143,18 @@
         
         /**
          * Updates the positions and fading of satellite trails in the 3D scene.
+         * Now updates based on `displayedSatellites`.
          */
         function updateTrails() {
-            satelliteTrails.forEach((trail, index) => {
-                /* Only update if trails are visible and the corresponding satellite exists */
-                if (!trailsVisible || !satellites[index]) return;
+            // Iterate over all satellites that are currently rendered
+            satellites.forEach((sat, index) => { 
+                const trail = satelliteTrails[index]; // Get the corresponding trail object
+                if (!trail) return; // Should not happen if arrays are synced
+
+                /* Only update if trails are visible and the corresponding satellite is visible */
+                if (!trailsVisible || !sat.group.visible) return; // Check individual satellite group visibility
                 
-                const satellite = satellites[index];
-                const currentPos = satellite.group.position.clone();
+                const currentPos = sat.group.position.clone();
                 
                 /* Add current position to the trail history, remove oldest if exceeding length */
                 trail.points.push(currentPos);
@@ -1171,7 +1166,7 @@
                 const positions = [];
                 const colors = []; 
                 const baseColor = new THREE.Color(
-                    satellites[index].data.status === 'active' ? 0x00ff88 : 0xff4444
+                    sat.data.status === 'active' ? STARLINK_COLOR : INACTIVE_COLOR 
                 );
 
                 for (let i = 0; i < trail.points.length; i++) {
@@ -1215,22 +1210,39 @@
          * Sets up all UI control button click handlers and mouse/touch interactions for camera control.
          */
         function setupControls() {
-            /* Toggle Starlink satellites visibility */
+            /* Toggle Starlink satellites visibility (overall visibility) */
             document.getElementById('toggleStarlink').onclick = (event) => {
                 starlinkVisible = !starlinkVisible;
+                // Update the visibility of currently displayed Starlinks
                 satellites.forEach(sat => {
                     sat.group.visible = starlinkVisible;
                 });
-                event.target.classList.toggle('active');
+                // Ensure orbits and trails are also updated if they were linked to sat visibility
+                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
+                event.target.classList.toggle('active', starlinkVisible); // Update button active state
+            };
+
+            /* Toggle Show All / Show Limited Starlinks */
+            document.getElementById('showAllStarlinksButton').onclick = (event) => {
+                if (currentDisplayPercentage === 1.0) {
+                    currentDisplayPercentage = 0.25; // Revert to 25%
+                    event.target.textContent = "Show All Starlinks";
+                    event.target.classList.remove('active');
+                } else {
+                    currentDisplayPercentage = 1.0; // Show all
+                    event.target.textContent = "Show Limited Starlinks"; // Change button text
+                    event.target.classList.add('active');
+                }
+                // Force re-render based on current slider year and new percentage
+                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
             };
             
             /* Toggle Orbit Paths visibility */
             document.getElementById('toggleOrbits').onclick = (event) => {
                 orbitsVisible = !orbitsVisible;
-                orbitPaths.forEach(orbit => {
-                    orbit.visible = orbitsVisible;
-                });
-                event.target.classList.toggle('active');
+                // Force a re-render to ensure new/existing orbits reflect the visibility state
+                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
+                event.target.classList.toggle('active', orbitsVisible); // Update button active state
             };
             
             /* Toggle Satellite List and Details Panel visibility */
@@ -1242,23 +1254,26 @@
                 
                 /* Reset selected satellite state when list is toggled */
                 selectedSatellite = null;
-                document.querySelectorAll('.satellite-item').forEach(item => item.classList.remove('selected'));
-                satellites.forEach(sat => { /* Reset 3D highlighting */
+                document.querySelectorAll('.satellite-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                satellites.forEach(sat => { /* Reset 3D highlighting to original colors */
+                    const originalColor = sat.data.status === 'active' ? STARLINK_COLOR : INACTIVE_COLOR;
                     sat.dot.material.emissive.setHex(0x000000);
+                    sat.dot.material.color.setHex(originalColor);
                     sat.glow.material.opacity = 0.15;
-                    sat.glow.material.color.set(sat.data.status === 'active' ? 0x00ff88 : 0xff4444);
+                    sat.glow.material.color.setHex(originalColor);
                 });
 
-                event.target.classList.toggle('active');
+                event.target.classList.toggle('active', labelsVisible); // Update button active state
             };
             
             /* Toggle Satellite Trails visibility */
             document.getElementById('toggleTrails').onclick = (event) => {
                 trailsVisible = !trailsVisible;
-                satelliteTrails.forEach(trail => {
-                    trail.group.visible = trailsVisible;
-                });
-                event.target.classList.toggle('active');
+                // Force a re-render to apply new visibility state
+                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
+                event.target.classList.toggle('active', trailsVisible); // Update button active state
             };
             
             /* Event listener for mouse clicks on the renderer for satellite selection */
@@ -1286,8 +1301,8 @@
                 const deltaY = event.clientY - mouseY;
                 
                 /* Rotate the earthGroup (which contains Earth, satellites, orbits, trails) */
-                earthGroup.rotation.y += deltaX * 0.5; 
-                earthGroup.rotation.x += deltaY * 0.5; 
+                earthGroup.rotation.y += deltaX * 0.005; 
+                earthGroup.rotation.x += deltaY * 0.005; 
                 
                 mouseX = event.clientX;
                 mouseY = event.clientY;
@@ -1302,7 +1317,7 @@
                 
                 /* Clamp zoom distance to prevent extreme zoom in/out */
                 camera.position.z = Math.max(150, Math.min(camera.position.z, 2000));
-                camera.lookAt(0, 0, 0); /* Always look at the center of the scene */
+                camera.lookAt(GLOBE_OFFSET_X, 0, 0); /* Always look at the center of the shifted globe */
             });
 
             /* Touch events for mobile camera rotation */
@@ -1342,6 +1357,27 @@
                 isTouching = false;
             });
         }
+
+        /**
+         * Sets up the timeline slider functionality.
+         */
+        function setupTimelineSlider() {
+            const slider = document.getElementById('timelineSlider');
+            const yearDisplay = document.getElementById('yearDisplay');
+
+            // Set slider max to current year
+            const currentYear = new Date().getFullYear();
+            slider.max = currentYear;
+            slider.value = currentYear; // Default to current year
+            yearDisplay.textContent = currentYear;
+
+            // Update visualization when slider changes
+            slider.oninput = () => {
+                const selectedYear = parseInt(slider.value);
+                yearDisplay.textContent = selectedYear;
+                updateSatellitesDisplay(selectedYear); // Trigger display update
+            };
+        }
         
         /**
          * Sets the visual size of all satellites in the 3D scene.
@@ -1350,7 +1386,7 @@
          */
         function setSatelliteSize(size, clickedButton) {
             satelliteSize = size;
-            satellites.forEach(sat => {
+            satellites.forEach(sat => { // Only iterating over Starlink satellites now
                 sat.group.scale.setScalar(size); /* Apply scalar scale to the satellite group */
             });
             
@@ -1368,7 +1404,7 @@
          */
         function focusOnStarlink() {
             camera.position.set(400, 300, 400); /* Move camera to a position for constellation view */
-            camera.lookAt(0, 0, 0); /* Ensure camera looks at Earth's center */
+            camera.lookAt(GLOBE_OFFSET_X, 0, 0); /* Look at the center of the shifted globe */
         }
         
         /**
@@ -1376,19 +1412,21 @@
          */
         function resetView() {
             camera.position.set(0, 0, 300); /* Reset camera to default position */
-            camera.lookAt(0, 0, 0); /* Reset camera focus */
+            camera.lookAt(GLOBE_OFFSET_X, 0, 0); /* Reset camera focus to the shifted globe */
             if (earthGroup) {
                 earthGroup.rotation.set(0, 0, 0); /* Reset Earth's rotation */
+                earthGroup.position.x = GLOBE_OFFSET_X; // Reset globe position to the new offset
             }
         }
         
         /**
          * Updates the live statistics displayed in the UI panels.
+         * Now uses `displayedSatellites`.
          */
         function updateStats() {
-            const activeSats = realStarlinkData.filter(sat => sat.status === 'active').length;
-            const totalAltitude = realStarlinkData.reduce((sum, sat) => sum + sat.altitude, 0);
-            const avgAlt = realStarlinkData.length > 0 ? totalAltitude / realStarlinkData.length : 0;
+            const activeSats = displayedSatellites.filter(sat => sat.status === 'active').length;
+            const totalAltitude = displayedSatellites.reduce((sum, sat) => sum + sat.altitude, 0);
+            const avgAlt = displayedSatellites.length > 0 ? totalAltitude / displayedSatellites.length : 0;
             
             /* Simple placeholder for coverage percentage (real coverage is more complex) */
             const coverage = Math.min(100, (activeSats / 5000) * 100); 
@@ -1401,6 +1439,7 @@
         /**
          * The main animation loop for the 3D scene.
          * This function is called continuously using requestAnimationFrame.
+         * Now updates `satellites` (Starlink) by TLE.
          */
         function animate() {
             if (!isAnimating) return; /* Stop animation if flag is false */
@@ -1411,33 +1450,29 @@
                 earthGroup.rotation.y += 0.0005; /* Adjust rotation speed for the Earth and its children */
             }
             
-            /* Only update satellite positions in real-time if not using timeline mode */
-            if (historicalTLEs.length === 0 || currentTimelineIndex === historicalTLEs.length - 1) {
-                /* Update satellite positions based on real-time TLE propagation */
-                const now = new Date();
-                realStarlinkData.forEach((satData, index) => {
-                    if (satellites[index]) {
-                        const satrec = satellite.twoline2satrec(satData.tle1, satData.tle2);
-                        const pos = getSatPosition(satrec, now);
-                        
-                        if (pos) {
-                            /* Calculate new 3D position and update the satellite's group position */
-                            const position = latLonToPosition(pos.latitude, pos.longitude, pos.altitude);
-                            satellites[index].group.position.copy(position);
+            /* Update Starlink satellite positions based on real-time TLE propagation */
+            const now = new Date();
+            satellites.forEach((sat3D) => { // Iterate over currently rendered Starlinks
+                const satData = sat3D.data;
+                const satrec = satellite.twoline2satrec(satData.tle1, satData.tle2);
+                const pos = getSatPosition(satrec, now);
+                
+                if (pos) { // Ensure position is valid
+                    /* Calculate new 3D position and update the satellite's group position */
+                    const position = latLonToPosition(pos.latitude, pos.longitude, pos.altitude);
+                    sat3D.group.position.copy(position);
 
-                            /* Update satellite data for the UI details panel */
-                            satellites[index].data.latitude = pos.latitude;
-                            satellites[index].data.longitude = pos.longitude;
-                            satellites[index].data.altitude = pos.altitude;
-                            
-                            /* If this satellite is currently selected, refresh its details in the UI */
-                            if (selectedSatellite && selectedSatellite.index === index) {
-                                showSatelliteDetails(satellites[index].data);
-                            }
-                        }
+                    /* Update satellite data for the UI details panel (important for selected satellite) */
+                    satData.latitude = pos.latitude;
+                    satData.longitude = pos.longitude;
+                    satData.altitude = pos.altitude;
+                    
+                    /* If this satellite is currently selected, refresh its details in the UI */
+                    if (selectedSatellite && selectedSatellite.data.id === satData.id) {
+                        showSatelliteDetails(satData);
                     }
-                });
-            }
+                }
+            });
             
             updateTrails(); /* Update the visual trails behind the satellites */
             
@@ -1453,248 +1488,6 @@
         
         /* Initialize the application once the entire window content has loaded */
         window.onload = init;
-
-        /**
-         * Fetches historical Starlink TLE data from multiple sources to build timeline.
-         * @returns {Promise<Array>} Array of historical TLE data objects.
-         */
-        async function fetchHistoricalTLEs() {
-            const historicalData = [];
-            
-            try {
-                // Fetch current Starlink TLEs
-                const currentResponse = await fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle');
-                if (currentResponse.ok) {
-                    const currentTLEs = parseTLEs(await currentResponse.text());
-                    historicalData.push({
-                        date: new Date(),
-                        tles: currentTLEs,
-                        source: 'current'
-                    });
-                }
-
-                // Fetch historical data from Space-Track (if available) or use simulated data
-                // For demo purposes, we'll create simulated historical data based on known launch dates
-                const launchDates = [
-                    '2019-05-24', '2019-11-11', '2020-01-07', '2020-01-29', '2020-02-17',
-                    '2020-03-18', '2020-04-22', '2020-06-04', '2020-06-13', '2020-08-07',
-                    '2020-08-18', '2020-09-03', '2020-10-06', '2020-10-18', '2020-10-24',
-                    '2020-11-05', '2020-11-25', '2020-12-19', '2021-01-08', '2021-01-20',
-                    '2021-02-04', '2021-02-16', '2021-03-04', '2021-03-11', '2021-03-14',
-                    '2021-03-24', '2021-04-07', '2021-04-29', '2021-05-04', '2021-05-09',
-                    '2021-05-15', '2021-05-26', '2021-06-03', '2021-06-06', '2021-06-17',
-                    '2021-06-30', '2021-07-29', '2021-08-29', '2021-09-13', '2021-09-23',
-                    '2021-10-18', '2021-11-13', '2021-12-02', '2021-12-18', '2022-01-06',
-                    '2022-01-19', '2022-02-03', '2022-02-21', '2022-03-03', '2022-03-09',
-                    '2022-03-19', '2022-04-01', '2022-04-08', '2022-04-21', '2022-04-29',
-                    '2022-05-06', '2022-05-13', '2022-05-18', '2022-05-25', '2022-06-01',
-                    '2022-06-08', '2022-06-17', '2022-06-25', '2022-07-07', '2022-07-10',
-                    '2022-07-17', '2022-07-22', '2022-07-24', '2022-08-10', '2022-08-12',
-                    '2022-08-19', '2022-08-28', '2022-09-05', '2022-09-11', '2022-09-19',
-                    '2022-09-24', '2022-10-05', '2022-10-08', '2022-10-15', '2022-10-20',
-                    '2022-10-28', '2022-11-01', '2022-11-03', '2022-11-12', '2022-11-23',
-                    '2022-12-08', '2022-12-16', '2022-12-17', '2022-12-28', '2023-01-03',
-                    '2023-01-10', '2023-01-19', '2023-01-26', '2023-02-02', '2023-02-07',
-                    '2023-02-17', '2023-02-27', '2023-03-03', '2023-03-09', '2023-03-15',
-                    '2023-03-17', '2023-03-24', '2023-03-29', '2023-04-02', '2023-04-07',
-                    '2023-04-15', '2023-04-19', '2023-04-27', '2023-05-04', '2023-05-10',
-                    '2023-05-14', '2023-05-20', '2023-05-31', '2023-06-04', '2023-06-12',
-                    '2023-06-18', '2023-06-23', '2023-06-27', '2023-07-07', '2023-07-10',
-                    '2023-07-16', '2023-07-19', '2023-07-24', '2023-07-28', '2023-08-03',
-                    '2023-08-07', '2023-08-11', '2023-08-17', '2023-08-22', '2023-08-27',
-                    '2023-09-01', '2023-09-05', '2023-09-09', '2023-09-12', '2023-09-16',
-                    '2023-09-20', '2023-09-24', '2023-09-28', '2023-10-05', '2023-10-09',
-                    '2023-10-13', '2023-10-18', '2023-10-21', '2023-10-25', '2023-10-29',
-                    '2023-11-03', '2023-11-08', '2023-11-12', '2023-11-18', '2023-11-22',
-                    '2023-11-27', '2023-12-02', '2023-12-07', '2023-12-12', '2023-12-16',
-                    '2023-12-19', '2023-12-23', '2023-12-28', '2024-01-02', '2024-01-07',
-                    '2024-01-11', '2024-01-15', '2024-01-19', '2024-01-23', '2024-01-27',
-                    '2024-01-31', '2024-02-04', '2024-02-08', '2024-02-12', '2024-02-16',
-                    '2024-02-20', '2024-02-24', '2024-02-28', '2024-03-03', '2024-03-07',
-                    '2024-03-11', '2024-03-15', '2024-03-19', '2024-03-23', '2024-03-27',
-                    '2024-03-31', '2024-04-04', '2024-04-08', '2024-04-12', '2024-04-16',
-                    '2024-04-20', '2024-04-24', '2024-04-28', '2024-05-02', '2024-05-06',
-                    '2024-05-10', '2024-05-14', '2024-05-18', '2024-05-22', '2024-05-26',
-                    '2024-05-30', '2024-06-03', '2024-06-07', '2024-06-11', '2024-06-15',
-                    '2024-06-19', '2024-06-23', '2024-06-27', '2024-07-01', '2024-07-05',
-                    '2024-07-09', '2024-07-13', '2024-07-17', '2024-07-21', '2024-07-25',
-                    '2024-07-29', '2024-08-02', '2024-08-06', '2024-08-10', '2024-08-14',
-                    '2024-08-18', '2024-08-22', '2024-08-26', '2024-08-30', '2024-09-03',
-                    '2024-09-07', '2024-09-11', '2024-09-15', '2024-09-19', '2024-09-23',
-                    '2024-09-27', '2024-10-01', '2024-10-05', '2024-10-09', '2024-10-13',
-                    '2024-10-17', '2024-10-21', '2024-10-25', '2024-10-29', '2024-11-02',
-                    '2024-11-06', '2024-11-10', '2024-11-14', '2024-11-18', '2024-11-22',
-                    '2024-11-26', '2024-11-30', '2024-12-04', '2024-12-08', '2024-12-12',
-                    '2024-12-16', '2024-12-20', '2024-12-24', '2024-12-28'
-                ];
-
-                // Create simulated historical data based on launch dates
-                let cumulativeSatellites = 0;
-                for (let i = 0; i < launchDates.length; i++) {
-                    const launchDate = new Date(launchDates[i]);
-                    if (launchDate <= timelineEndDate) {
-                        // Simulate satellites per launch (typically 60 per launch)
-                        const satellitesPerLaunch = Math.floor(Math.random() * 20) + 50; // 50-70 satellites
-                        cumulativeSatellites += satellitesPerLaunch;
-                        
-                        // Create simulated TLE data for this launch
-                        const simulatedTLEs = [];
-                        for (let j = 0; j < satellitesPerLaunch; j++) {
-                            const satName = `STARLINK-${String(cumulativeSatellites - satellitesPerLaunch + j + 1).padStart(4, '0')}`;
-                            // Create simplified TLE data (in real implementation, this would be actual TLE data)
-                            simulatedTLEs.push({
-                                name: satName,
-                                tle1: `1 ${String(44000 + cumulativeSatellites - satellitesPerLaunch + j).padStart(5, '0')}U 19029A   ${launchDate.getFullYear()}${String(launchDate.getDate()).padStart(3, '0')}.${String(launchDate.getHours()).padStart(2, '0')}${String(launchDate.getMinutes()).padStart(2, '0')}${String(launchDate.getSeconds()).padStart(2, '0')}  .00000000  00000+0  00000+0 0    0${String(j + 1).padStart(2, '0')}`,
-                                tle2: `2 ${String(44000 + cumulativeSatellites - satellitesPerLaunch + j).padStart(5, '0')}  52.9979  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000 0001000  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000 15.054${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}${String(Math.floor(Math.random() * 10)).padStart(1, '0')}`
-                            });
-                        }
-                        
-                        historicalData.push({
-                            date: launchDate,
-                            tles: simulatedTLEs,
-                            source: 'simulated',
-                            totalSatellites: cumulativeSatellites
-                        });
-                    }
-                }
-
-                // Sort by date
-                historicalData.sort((a, b) => a.date - b.date);
-                
-                return historicalData;
-            } catch (error) {
-                console.error("Failed to fetch historical TLEs:", error);
-                showMessageBox("Failed to load historical data. Using current data only.");
-                return historicalData;
-            }
-        }
-
-        /**
-         * Initializes the timeline with historical data and sets up controls.
-         */
-        async function initTimeline() {
-            historicalTLEs = await fetchHistoricalTLEs();
-            
-            if (historicalTLEs.length > 0) {
-                // Set timeline slider range
-                const slider = document.getElementById('timelineSlider');
-                slider.min = 0;
-                slider.max = historicalTLEs.length - 1;
-                slider.value = historicalTLEs.length - 1; // Start at current time
-                
-                // Set initial date
-                updateTimelineDisplay();
-                
-                // Set up timeline controls
-                setupTimelineControls();
-            }
-        }
-
-        /**
-         * Sets up timeline control event listeners.
-         */
-        function setupTimelineControls() {
-            const slider = document.getElementById('timelineSlider');
-            
-            // Slider change event
-            slider.addEventListener('input', (e) => {
-                currentTimelineIndex = parseInt(e.target.value);
-                updateTimelineDisplay();
-                updateSatellitesForTimeline();
-            });
-        }
-
-        /**
-         * Updates the timeline display with current date and statistics.
-         */
-        function updateTimelineDisplay() {
-            if (historicalTLEs.length === 0) return;
-            
-            const currentData = historicalTLEs[currentTimelineIndex];
-            const dateElement = document.getElementById('timelineDate');
-            const totalSatsElement = document.getElementById('totalSats');
-            const totalCoverageElement = document.getElementById('totalCoverage');
-            
-            // Update date - show only month and year
-            const date = currentData.date;
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const monthYear = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-            dateElement.textContent = monthYear;
-            
-            // Update satellite count
-            const satelliteCount = currentData.totalSatellites || currentData.tles.length;
-            totalSatsElement.textContent = satelliteCount;
-            
-            // Update coverage (simplified calculation)
-            const coverage = Math.min(100, (satelliteCount / 5000) * 100);
-            totalCoverageElement.textContent = Math.round(coverage) + '%';
-        }
-
-        /**
-         * Updates satellite positions and visibility based on current timeline position.
-         */
-        function updateSatellitesForTimeline() {
-            if (historicalTLEs.length === 0) return;
-            
-            const currentData = historicalTLEs[currentTimelineIndex];
-            const currentDate = currentData.date;
-            
-            // Clear existing satellites
-            satellites.forEach(sat => {
-                if (sat.group.parent) {
-                    sat.group.parent.remove(sat.group);
-                }
-            });
-            satellites = [];
-            
-            // Clear existing trails
-            satelliteTrails.forEach(trail => {
-                if (trail.group.parent) {
-                    trail.group.parent.remove(trail.group);
-                }
-            });
-            satelliteTrails = [];
-            
-            // Create satellites for current timeline position
-            currentData.tles.forEach((tleData, index) => {
-                try {
-                    const satrec = satellite.twoline2satrec(tleData.tle1, tleData.tle2);
-                    const pos = getSatPosition(satrec, currentDate);
-                    
-                    if (pos) {
-                        const satData = {
-                            id: tleData.name,
-                            name: tleData.name,
-                            latitude: pos.latitude,
-                            longitude: pos.longitude,
-                            altitude: pos.altitude,
-                            velocity: satrec.no * 60 / (2 * Math.PI) * 6371.0 / 60,
-                            status: 'active',
-                            inclination: satrec.inclo * (180 / Math.PI),
-                            tle1: tleData.tle1,
-                            tle2: tleData.tle2
-                        };
-                        
-                        const satellite = createSatellite(satData, index);
-                        satellite.group.visible = starlinkVisible; // Ensure visibility matches current setting
-                        satellites.push(satellite);
-                        earthGroup.add(satellite.group);
-                        
-                        const trail = createSatelliteTrail(satData);
-                        trail.group.visible = trailsVisible; // Ensure trail visibility matches current setting
-                        satelliteTrails.push(trail);
-                        earthGroup.add(trail.group);
-                    }
-                } catch (error) {
-                    console.warn(`Failed to process satellite ${tleData.name}:`, error);
-                }
-            });
-            
-            // Update satellite list
-            populateSatelliteList();
-            updateStats();
-        }
     </script>
 </body>
 </html>
