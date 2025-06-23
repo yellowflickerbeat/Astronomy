@@ -574,18 +574,41 @@
                         launchYear = (twoDigitYear < 57) ? (2000 + twoDigitYear) : (1900 + twoDigitYear);
                     }
                 }
-                
-                // Initialize satrec to get position later
+                // Assign a unique id for each satellite
+                let idPrefix = '';
+                if (type === 'starlink') idPrefix = 'STARLINK-';
+                else if (type === 'other-leo') idPrefix = 'OTHERLEO-';
+                else if (type === 'debris') idPrefix = 'DEBRIS-';
                 const satrec = satellite.twoline2satrec(tle1, tle2);
-
+                // Extract inclination from TLE line 2 (columns 8-16)
+                let inclination = 0;
+                if (tle2 && tle2.length >= 16) {
+                    inclination = parseFloat(tle2.substring(8, 16));
+                }
+                // Get initial position
+                let latitude = 0, longitude = 0, altitude = 0;
+                if (satrec) {
+                    const pos = getSatPosition(satrec, new Date());
+                    if (pos) {
+                        latitude = pos.latitude;
+                        longitude = pos.longitude;
+                        altitude = pos.altitude;
+                    }
+                }
                 satellites.push({ 
+                    id: idPrefix + i, // Unique id for each satellite
                     name, 
                     tle1, 
                     tle2, 
                     launchYear, 
                     type, 
-                    satrec, // Store satrec for propagation
-                    status: 'active' // Default status, can be refined for actual inactive later
+                    satrec: satrec, // Store satrec for propagation
+                    status: 'active', // Default status, can be refined for actual inactive later
+                    inclination: inclination,
+                    velocity: 7.5, // Approximate LEO velocity in km/s
+                    latitude: latitude,
+                    longitude: longitude,
+                    altitude: altitude
                 });
             }
             return satellites;
