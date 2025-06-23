@@ -117,7 +117,7 @@
         /* Styles for the legend */
         #legend {
             position: absolute;
-            bottom: 320px; /* Position above satellite details */
+            bottom: 440px; /* Position above satellite details */
             right: 20px;
             z-index: 100;
             background: rgba(0, 0, 0, 0.8);
@@ -159,7 +159,7 @@
     #satelliteList {
         position: absolute;
         left: 20px;
-        bottom: 50px;
+        bottom: 120px;
         width: 280px;
         max-height: 400px; /* Limit height for scrollability */
         background: rgba(0, 0, 0, 0.9);
@@ -227,7 +227,7 @@
     #satelliteDetails {
         position: absolute;
         right: 20px;
-        bottom: 20px;
+        bottom: 120px;
         width: 250px;
         background: rgba(0, 0, 0, 0.9);
         border-radius: 10px;
@@ -318,6 +318,123 @@
     #messageBox button:hover {
         background: #eee;
     }
+
+    /* Styles for the timeline slider */
+    #timeline {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        max-width: 600px;
+        background: rgba(0, 0, 0, 0.9);
+        padding: 15px;
+        border-radius: 10px;
+        color: white;
+        z-index: 100;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    #timeline h4 {
+        margin: 0 0 10px 0;
+        color: #00ff88;
+        text-shadow: 0 0 5px #00ff88;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .timeline-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .timeline-slider {
+        flex: 1;
+        margin: 0 15px;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 4px;
+        border-radius: 2px;
+        background: #333;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .timeline-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #00ff88;
+        cursor: pointer;
+        box-shadow: 0 0 8px #00ff88;
+    }
+
+    .timeline-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #00ff88;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 8px #00ff88;
+    }
+
+    .timeline-date {
+        font-size: 12px;
+        color: #00ff88;
+        font-weight: bold;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .timeline-stats {
+        display: flex;
+        justify-content: space-around;
+        font-size: 11px;
+        color: #ccc;
+    }
+
+    .timeline-stat {
+        text-align: center;
+    }
+
+    .timeline-stat-value {
+        color: #00ff88;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .playback-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .playback-controls button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 0.3s ease;
+    }
+
+    .playback-controls button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+    }
+
+    .playback-controls button.active {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        box-shadow: 0 0 8px #00ff88;
+    }
 </style>
 </head>
 <body>
@@ -393,6 +510,24 @@
                 <span>Inactive Satellite</span>
             </div>
         </div>
+
+        <div id="timeline">
+            <h4>🕒 Satellite Deployment Timeline</h4>
+            <div class="timeline-controls">
+                <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="100" value="100">
+                <span id="timelineDate" class="timeline-date">Dec 2024</span>
+            </div>
+            <div class="timeline-stats">
+                <div class="timeline-stat">
+                    <span>Active Satellites:</span>
+                    <span class="timeline-stat-value" id="totalSats">0</span>
+                </div>
+                <div class="timeline-stat">
+                    <span>Coverage:</span>
+                    <span class="timeline-stat-value" id="totalCoverage">0%</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Custom Message Box for non-alert notifications -->
@@ -414,6 +549,13 @@
         let trailsVisible = false;
         let satelliteSize = 1; /* Default medium size for satellites */
         let isAnimating = false; /* Flag to control animation loop start/stop */
+
+        /* Timeline variables */
+        let timelineData = []; /* Array to store historical satellite data */
+        let currentTimelineIndex = 0; /* Current position in timeline */
+        let timelineStartDate = new Date('2019-05-24'); /* First Starlink launch */
+        let timelineEndDate = new Date(); /* Current date */
+        let historicalTLEs = []; /* Array to store historical TLE data */
 
         /* Constants for visualization scaling and detail */
         const EARTH_RADIUS = 100; /* Radius of Earth in Three.js units */
@@ -513,6 +655,10 @@
          */
         async function loadRealStarlinkData() {
             document.getElementById('loading').style.display = 'block'; /* Show loading indicator */
+            
+            // Initialize timeline first
+            await initTimeline();
+            
             const tleText = await fetchStarlinkTLEs();
             if (!tleText) {
                 return; /* Stop if TLE fetching failed; error message already displayed */
@@ -628,7 +774,14 @@
             createEarth();
             /* IMPORTANT: Satellites, trails, and orbits are added as children of earthGroup
                to ensure they rotate with the Earth, creating the orbiting effect. */
-            createStarlinkSatellites(); 
+            
+            // Use timeline data if available, otherwise use current data
+            if (historicalTLEs.length > 0) {
+                updateSatellitesForTimeline();
+            } else {
+                createStarlinkSatellites(); 
+            }
+            
             createOrbitPaths(); 
             populateSatelliteList(); /* Populate the HTML sidebar list */
             updateStats(); /* Update statistics in the UI */
@@ -1133,7 +1286,7 @@
                 const deltaY = event.clientY - mouseY;
                 
                 /* Rotate the earthGroup (which contains Earth, satellites, orbits, trails) */
-                earthGroup.rotation.y += deltaX * 1.5; 
+                earthGroup.rotation.y += deltaX * 0.5; 
                 earthGroup.rotation.x += deltaY * 0.5; 
                 
                 mouseX = event.clientX;
@@ -1258,28 +1411,33 @@
                 earthGroup.rotation.y += 0.0005; /* Adjust rotation speed for the Earth and its children */
             }
             
-            /* Update satellite positions based on real-time TLE propagation */
-            const now = new Date();
-            realStarlinkData.forEach((satData, index) => {
-                const satrec = satellite.twoline2satrec(satData.tle1, satData.tle2);
-                const pos = getSatPosition(satrec, now);
-                
-                if (pos && satellites[index]) {
-                    /* Calculate new 3D position and update the satellite's group position */
-                    const position = latLonToPosition(pos.latitude, pos.longitude, pos.altitude);
-                    satellites[index].group.position.copy(position);
+            /* Only update satellite positions in real-time if not using timeline mode */
+            if (historicalTLEs.length === 0 || currentTimelineIndex === historicalTLEs.length - 1) {
+                /* Update satellite positions based on real-time TLE propagation */
+                const now = new Date();
+                realStarlinkData.forEach((satData, index) => {
+                    if (satellites[index]) {
+                        const satrec = satellite.twoline2satrec(satData.tle1, satData.tle2);
+                        const pos = getSatPosition(satrec, now);
+                        
+                        if (pos) {
+                            /* Calculate new 3D position and update the satellite's group position */
+                            const position = latLonToPosition(pos.latitude, pos.longitude, pos.altitude);
+                            satellites[index].group.position.copy(position);
 
-                    /* Update satellite data for the UI details panel */
-                    satellites[index].data.latitude = pos.latitude;
-                    satellites[index].data.longitude = pos.longitude;
-                    satellites[index].data.altitude = pos.altitude;
-                    
-                    /* If this satellite is currently selected, refresh its details in the UI */
-                    if (selectedSatellite && selectedSatellite.index === index) {
-                        showSatelliteDetails(satellites[index].data);
+                            /* Update satellite data for the UI details panel */
+                            satellites[index].data.latitude = pos.latitude;
+                            satellites[index].data.longitude = pos.longitude;
+                            satellites[index].data.altitude = pos.altitude;
+                            
+                            /* If this satellite is currently selected, refresh its details in the UI */
+                            if (selectedSatellite && selectedSatellite.index === index) {
+                                showSatelliteDetails(satellites[index].data);
+                            }
+                        }
                     }
-                }
-            });
+                });
+            }
             
             updateTrails(); /* Update the visual trails behind the satellites */
             
@@ -1295,6 +1453,248 @@
         
         /* Initialize the application once the entire window content has loaded */
         window.onload = init;
+
+        /**
+         * Fetches historical Starlink TLE data from multiple sources to build timeline.
+         * @returns {Promise<Array>} Array of historical TLE data objects.
+         */
+        async function fetchHistoricalTLEs() {
+            const historicalData = [];
+            
+            try {
+                // Fetch current Starlink TLEs
+                const currentResponse = await fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle');
+                if (currentResponse.ok) {
+                    const currentTLEs = parseTLEs(await currentResponse.text());
+                    historicalData.push({
+                        date: new Date(),
+                        tles: currentTLEs,
+                        source: 'current'
+                    });
+                }
+
+                // Fetch historical data from Space-Track (if available) or use simulated data
+                // For demo purposes, we'll create simulated historical data based on known launch dates
+                const launchDates = [
+                    '2019-05-24', '2019-11-11', '2020-01-07', '2020-01-29', '2020-02-17',
+                    '2020-03-18', '2020-04-22', '2020-06-04', '2020-06-13', '2020-08-07',
+                    '2020-08-18', '2020-09-03', '2020-10-06', '2020-10-18', '2020-10-24',
+                    '2020-11-05', '2020-11-25', '2020-12-19', '2021-01-08', '2021-01-20',
+                    '2021-02-04', '2021-02-16', '2021-03-04', '2021-03-11', '2021-03-14',
+                    '2021-03-24', '2021-04-07', '2021-04-29', '2021-05-04', '2021-05-09',
+                    '2021-05-15', '2021-05-26', '2021-06-03', '2021-06-06', '2021-06-17',
+                    '2021-06-30', '2021-07-29', '2021-08-29', '2021-09-13', '2021-09-23',
+                    '2021-10-18', '2021-11-13', '2021-12-02', '2021-12-18', '2022-01-06',
+                    '2022-01-19', '2022-02-03', '2022-02-21', '2022-03-03', '2022-03-09',
+                    '2022-03-19', '2022-04-01', '2022-04-08', '2022-04-21', '2022-04-29',
+                    '2022-05-06', '2022-05-13', '2022-05-18', '2022-05-25', '2022-06-01',
+                    '2022-06-08', '2022-06-17', '2022-06-25', '2022-07-07', '2022-07-10',
+                    '2022-07-17', '2022-07-22', '2022-07-24', '2022-08-10', '2022-08-12',
+                    '2022-08-19', '2022-08-28', '2022-09-05', '2022-09-11', '2022-09-19',
+                    '2022-09-24', '2022-10-05', '2022-10-08', '2022-10-15', '2022-10-20',
+                    '2022-10-28', '2022-11-01', '2022-11-03', '2022-11-12', '2022-11-23',
+                    '2022-12-08', '2022-12-16', '2022-12-17', '2022-12-28', '2023-01-03',
+                    '2023-01-10', '2023-01-19', '2023-01-26', '2023-02-02', '2023-02-07',
+                    '2023-02-17', '2023-02-27', '2023-03-03', '2023-03-09', '2023-03-15',
+                    '2023-03-17', '2023-03-24', '2023-03-29', '2023-04-02', '2023-04-07',
+                    '2023-04-15', '2023-04-19', '2023-04-27', '2023-05-04', '2023-05-10',
+                    '2023-05-14', '2023-05-20', '2023-05-31', '2023-06-04', '2023-06-12',
+                    '2023-06-18', '2023-06-23', '2023-06-27', '2023-07-07', '2023-07-10',
+                    '2023-07-16', '2023-07-19', '2023-07-24', '2023-07-28', '2023-08-03',
+                    '2023-08-07', '2023-08-11', '2023-08-17', '2023-08-22', '2023-08-27',
+                    '2023-09-01', '2023-09-05', '2023-09-09', '2023-09-12', '2023-09-16',
+                    '2023-09-20', '2023-09-24', '2023-09-28', '2023-10-05', '2023-10-09',
+                    '2023-10-13', '2023-10-18', '2023-10-21', '2023-10-25', '2023-10-29',
+                    '2023-11-03', '2023-11-08', '2023-11-12', '2023-11-18', '2023-11-22',
+                    '2023-11-27', '2023-12-02', '2023-12-07', '2023-12-12', '2023-12-16',
+                    '2023-12-19', '2023-12-23', '2023-12-28', '2024-01-02', '2024-01-07',
+                    '2024-01-11', '2024-01-15', '2024-01-19', '2024-01-23', '2024-01-27',
+                    '2024-01-31', '2024-02-04', '2024-02-08', '2024-02-12', '2024-02-16',
+                    '2024-02-20', '2024-02-24', '2024-02-28', '2024-03-03', '2024-03-07',
+                    '2024-03-11', '2024-03-15', '2024-03-19', '2024-03-23', '2024-03-27',
+                    '2024-03-31', '2024-04-04', '2024-04-08', '2024-04-12', '2024-04-16',
+                    '2024-04-20', '2024-04-24', '2024-04-28', '2024-05-02', '2024-05-06',
+                    '2024-05-10', '2024-05-14', '2024-05-18', '2024-05-22', '2024-05-26',
+                    '2024-05-30', '2024-06-03', '2024-06-07', '2024-06-11', '2024-06-15',
+                    '2024-06-19', '2024-06-23', '2024-06-27', '2024-07-01', '2024-07-05',
+                    '2024-07-09', '2024-07-13', '2024-07-17', '2024-07-21', '2024-07-25',
+                    '2024-07-29', '2024-08-02', '2024-08-06', '2024-08-10', '2024-08-14',
+                    '2024-08-18', '2024-08-22', '2024-08-26', '2024-08-30', '2024-09-03',
+                    '2024-09-07', '2024-09-11', '2024-09-15', '2024-09-19', '2024-09-23',
+                    '2024-09-27', '2024-10-01', '2024-10-05', '2024-10-09', '2024-10-13',
+                    '2024-10-17', '2024-10-21', '2024-10-25', '2024-10-29', '2024-11-02',
+                    '2024-11-06', '2024-11-10', '2024-11-14', '2024-11-18', '2024-11-22',
+                    '2024-11-26', '2024-11-30', '2024-12-04', '2024-12-08', '2024-12-12',
+                    '2024-12-16', '2024-12-20', '2024-12-24', '2024-12-28'
+                ];
+
+                // Create simulated historical data based on launch dates
+                let cumulativeSatellites = 0;
+                for (let i = 0; i < launchDates.length; i++) {
+                    const launchDate = new Date(launchDates[i]);
+                    if (launchDate <= timelineEndDate) {
+                        // Simulate satellites per launch (typically 60 per launch)
+                        const satellitesPerLaunch = Math.floor(Math.random() * 20) + 50; // 50-70 satellites
+                        cumulativeSatellites += satellitesPerLaunch;
+                        
+                        // Create simulated TLE data for this launch
+                        const simulatedTLEs = [];
+                        for (let j = 0; j < satellitesPerLaunch; j++) {
+                            const satName = `STARLINK-${String(cumulativeSatellites - satellitesPerLaunch + j + 1).padStart(4, '0')}`;
+                            // Create simplified TLE data (in real implementation, this would be actual TLE data)
+                            simulatedTLEs.push({
+                                name: satName,
+                                tle1: `1 ${String(44000 + cumulativeSatellites - satellitesPerLaunch + j).padStart(5, '0')}U 19029A   ${launchDate.getFullYear()}${String(launchDate.getDate()).padStart(3, '0')}.${String(launchDate.getHours()).padStart(2, '0')}${String(launchDate.getMinutes()).padStart(2, '0')}${String(launchDate.getSeconds()).padStart(2, '0')}  .00000000  00000+0  00000+0 0    0${String(j + 1).padStart(2, '0')}`,
+                                tle2: `2 ${String(44000 + cumulativeSatellites - satellitesPerLaunch + j).padStart(5, '0')}  52.9979  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000 0001000  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000  ${String(Math.floor(Math.random() * 360)).padStart(3, '0')}.0000 15.054${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}${String(Math.floor(Math.random() * 10)).padStart(1, '0')}`
+                            });
+                        }
+                        
+                        historicalData.push({
+                            date: launchDate,
+                            tles: simulatedTLEs,
+                            source: 'simulated',
+                            totalSatellites: cumulativeSatellites
+                        });
+                    }
+                }
+
+                // Sort by date
+                historicalData.sort((a, b) => a.date - b.date);
+                
+                return historicalData;
+            } catch (error) {
+                console.error("Failed to fetch historical TLEs:", error);
+                showMessageBox("Failed to load historical data. Using current data only.");
+                return historicalData;
+            }
+        }
+
+        /**
+         * Initializes the timeline with historical data and sets up controls.
+         */
+        async function initTimeline() {
+            historicalTLEs = await fetchHistoricalTLEs();
+            
+            if (historicalTLEs.length > 0) {
+                // Set timeline slider range
+                const slider = document.getElementById('timelineSlider');
+                slider.min = 0;
+                slider.max = historicalTLEs.length - 1;
+                slider.value = historicalTLEs.length - 1; // Start at current time
+                
+                // Set initial date
+                updateTimelineDisplay();
+                
+                // Set up timeline controls
+                setupTimelineControls();
+            }
+        }
+
+        /**
+         * Sets up timeline control event listeners.
+         */
+        function setupTimelineControls() {
+            const slider = document.getElementById('timelineSlider');
+            
+            // Slider change event
+            slider.addEventListener('input', (e) => {
+                currentTimelineIndex = parseInt(e.target.value);
+                updateTimelineDisplay();
+                updateSatellitesForTimeline();
+            });
+        }
+
+        /**
+         * Updates the timeline display with current date and statistics.
+         */
+        function updateTimelineDisplay() {
+            if (historicalTLEs.length === 0) return;
+            
+            const currentData = historicalTLEs[currentTimelineIndex];
+            const dateElement = document.getElementById('timelineDate');
+            const totalSatsElement = document.getElementById('totalSats');
+            const totalCoverageElement = document.getElementById('totalCoverage');
+            
+            // Update date - show only month and year
+            const date = currentData.date;
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthYear = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+            dateElement.textContent = monthYear;
+            
+            // Update satellite count
+            const satelliteCount = currentData.totalSatellites || currentData.tles.length;
+            totalSatsElement.textContent = satelliteCount;
+            
+            // Update coverage (simplified calculation)
+            const coverage = Math.min(100, (satelliteCount / 5000) * 100);
+            totalCoverageElement.textContent = Math.round(coverage) + '%';
+        }
+
+        /**
+         * Updates satellite positions and visibility based on current timeline position.
+         */
+        function updateSatellitesForTimeline() {
+            if (historicalTLEs.length === 0) return;
+            
+            const currentData = historicalTLEs[currentTimelineIndex];
+            const currentDate = currentData.date;
+            
+            // Clear existing satellites
+            satellites.forEach(sat => {
+                if (sat.group.parent) {
+                    sat.group.parent.remove(sat.group);
+                }
+            });
+            satellites = [];
+            
+            // Clear existing trails
+            satelliteTrails.forEach(trail => {
+                if (trail.group.parent) {
+                    trail.group.parent.remove(trail.group);
+                }
+            });
+            satelliteTrails = [];
+            
+            // Create satellites for current timeline position
+            currentData.tles.forEach((tleData, index) => {
+                try {
+                    const satrec = satellite.twoline2satrec(tleData.tle1, tleData.tle2);
+                    const pos = getSatPosition(satrec, currentDate);
+                    
+                    if (pos) {
+                        const satData = {
+                            id: tleData.name,
+                            name: tleData.name,
+                            latitude: pos.latitude,
+                            longitude: pos.longitude,
+                            altitude: pos.altitude,
+                            velocity: satrec.no * 60 / (2 * Math.PI) * 6371.0 / 60,
+                            status: 'active',
+                            inclination: satrec.inclo * (180 / Math.PI),
+                            tle1: tleData.tle1,
+                            tle2: tleData.tle2
+                        };
+                        
+                        const satellite = createSatellite(satData, index);
+                        satellite.group.visible = starlinkVisible; // Ensure visibility matches current setting
+                        satellites.push(satellite);
+                        earthGroup.add(satellite.group);
+                        
+                        const trail = createSatelliteTrail(satData);
+                        trail.group.visible = trailsVisible; // Ensure trail visibility matches current setting
+                        satelliteTrails.push(trail);
+                        earthGroup.add(trail.group);
+                    }
+                } catch (error) {
+                    console.warn(`Failed to process satellite ${tleData.name}:`, error);
+                }
+            });
+            
+            // Update satellite list
+            populateSatelliteList();
+            updateStats();
+        }
     </script>
 </body>
 </html>
