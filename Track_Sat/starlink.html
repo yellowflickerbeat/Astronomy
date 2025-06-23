@@ -286,32 +286,6 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* Custom message box for alerts */
-    #messageBox {
-        display: none; /* Hidden by default */
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 0, 0, 0.9); /* Red background for errors */
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        z-index: 1001; /* Above everything else */
-        text-align: center;
-        border: 2px solid #ff0000;
-    }
-    #messageBox button {
-        background: #fff;
-        color: #000;
-        margin-top: 15px;
-        box-shadow: none; /* Override general button shadow */
-    }
-    #messageBox button:hover {
-        background: #eee;
-    }
-
     /* Styles for the slider and its label */
     input[type="range"] {
         width: 100%;
@@ -345,7 +319,7 @@
         box-shadow: 0 0 5px #00ff88;
     }
 
-    #yearDisplay {
+    #yearDisplay, #percentageDisplay {
         margin-top: 5px;
         font-size: 14px;
         color: #00ff88;
@@ -366,8 +340,7 @@
             
             <div class="control-group">
                 <button id="toggleStarlink" class="active">Show Starlink</button>
-                <button id="showAllStarlinksButton">Show All Starlinks</button> <!-- New Button -->
-                <button id="toggleOrbits">Show Orbits</button><br>
+                <button id="toggleOrbits">Show Orbits</button>
                 <button id="toggleLabels">Show List</button>
                 <button id="toggleTrails">Show Trails</button>
             </div>
@@ -388,6 +361,13 @@
                 <label for="timelineSlider">Deployment Timeline:</label>
                 <input type="range" id="timelineSlider" min="2019" max="2025" value="2025">
                 <div id="yearDisplay">2025</div>
+            </div>
+
+            <!-- New Percentage Slider -->
+            <div class="control-group">
+                <label for="percentageSlider">Coverage Percentage:</label>
+                <input type="range" id="percentageSlider" min="1" max="100" value="25">
+                <div id="percentageDisplay">25%</div>
             </div>
         </div>
         
@@ -474,7 +454,7 @@
         let displayedSatellites = []; 
 
         // New variable for controlling the display percentage of Starlinks
-        // Default to 25% for a less CPU-intensive initial load
+        // Default to 0.25 (25%) for a less CPU-intensive initial load
         let currentDisplayPercentage = 0.25; 
 
         /**
@@ -695,6 +675,7 @@
             }
 
             setupTimelineSlider(); // Set up the new timeline slider
+            setupPercentageSlider(); // Set up the new percentage slider
             // Initial display update for current year and default percentage
             updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
         }
@@ -1222,20 +1203,7 @@
                 event.target.classList.toggle('active', starlinkVisible); // Update button active state
             };
 
-            /* Toggle Show All / Show Limited Starlinks */
-            document.getElementById('showAllStarlinksButton').onclick = (event) => {
-                if (currentDisplayPercentage === 1.0) {
-                    currentDisplayPercentage = 0.25; // Revert to 25%
-                    event.target.textContent = "Show All Starlinks";
-                    event.target.classList.remove('active');
-                } else {
-                    currentDisplayPercentage = 1.0; // Show all
-                    event.target.textContent = "Show Limited Starlinks"; // Change button text
-                    event.target.classList.add('active');
-                }
-                // Force re-render based on current slider year and new percentage
-                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value)); 
-            };
+            // The 'showAllStarlinksButton' has been removed in favor of the granular percentage slider.
             
             /* Toggle Orbit Paths visibility */
             document.getElementById('toggleOrbits').onclick = (event) => {
@@ -1376,6 +1344,27 @@
                 const selectedYear = parseInt(slider.value);
                 yearDisplay.textContent = selectedYear;
                 updateSatellitesDisplay(selectedYear); // Trigger display update
+            };
+        }
+
+        /**
+         * Sets up the percentage slider functionality.
+         */
+        function setupPercentageSlider() {
+            const slider = document.getElementById('percentageSlider');
+            const percentageDisplay = document.getElementById('percentageDisplay');
+
+            // Set initial display value based on currentDisplayPercentage
+            slider.value = currentDisplayPercentage * 100;
+            percentageDisplay.textContent = `${slider.value}%`;
+
+            // Update currentDisplayPercentage and redraw satellites when slider changes
+            slider.oninput = () => {
+                const selectedPercentage = parseInt(slider.value);
+                currentDisplayPercentage = selectedPercentage / 100; // Convert to 0-1 range
+                percentageDisplay.textContent = `${selectedPercentage}%`;
+                // Re-render satellites based on current timeline year and new percentage
+                updateSatellitesDisplay(parseInt(document.getElementById('timelineSlider').value));
             };
         }
         
