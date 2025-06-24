@@ -347,7 +347,6 @@
                 <button id="toggleOtherLeo">Show Other LEO</button> 
                 <button id="toggleDebris">Show Debris</button><br>
                 <button id="toggleInactive">Show Inactive (Simulated)</button>
-                <button id="toggleDensityMap">Show Density Map</button>
             </div>
             
             <div class="control-group">
@@ -470,7 +469,6 @@
         let otherLeoVisible = false;
         let debrisVisible = false;
         let inactiveVisible = false;
-        let densityMapVisible = false; // New toggle for heatmap
         let orbitsVisible = false;
         let trailsVisible = false;
         let labelsVisible = false; 
@@ -504,13 +502,6 @@
         // Variable for controlling the display percentage of real satellites
         // Default to 0.25 (25%) for a less CPU-intensive initial load
         let currentDisplayPercentage = 0.25; 
-
-        // For Density Map
-        let densityMapMesh = null;
-        const DENSITY_GRID_RESOLUTION = 10; // Number of divisions for latitude/longitude
-        const DENSITY_ALTITUDE_LAYERS = 3; // Number of altitude layers
-        const LEO_ALT_MIN = 160; // LEO min alt in km
-        const LEO_ALT_MAX = 2000; // LEO max alt in km
 
         /**
          * Displays a custom message box to the user (replaces alert()).
@@ -792,7 +783,6 @@
 
             setupTimelineSlider(); 
             setupPercentageSlider(); 
-            createDensityMap(); // Create the density map grid once
             // Initial display update based on default slider values and toggles
             updateDisplayFromControls(); 
         }
@@ -942,14 +932,6 @@
                 }
             });
 
-            // Update Density Map visibility and counts
-            if (densityMapMesh) {
-                densityMapMesh.visible = densityMapVisible;
-                if (densityMapVisible) {
-                    updateDensityMap(displayedSatellitesData);
-                }
-            }
-
             populateSatelliteList(); 
             updateStats(); 
         }
@@ -999,20 +981,41 @@
         function createSatellite(satData, index, color) {
             const group = new THREE.Group(); 
             
-            const dotGeometry = new THREE.SphereGeometry(1.5, 8, 6); 
+            let dotSize = 1.5; // Default size for the core dot
+            let glowSize = 2.5; // Default size for the glow
+            let dotOpacity = 0.9;
+            let glowOpacity = 0.15;
+
+            // Adjust size and opacity based on satellite type for visual distinction
+            if (satData.type === 'starlink') {
+                dotSize = 0.7; // Smaller dot for Starlink
+                glowSize = 1.2;
+            } else if (satData.type === 'debris') {
+                dotSize = 0.4; // Smallest dot for debris
+                glowSize = 0.8;
+                dotOpacity = 0.6; // More transparent debris
+                glowOpacity = 0.1;
+            } else if (satData.type === 'inactive') {
+                dotSize = 0.8;
+                glowSize = 1.3;
+                dotOpacity = 0.7; // Slightly more transparent inactive
+                glowOpacity = 0.12;
+            }
+
+            const dotGeometry = new THREE.SphereGeometry(dotSize, 8, 6); // Uses the calculated dotSize
             const dotMaterial = new THREE.MeshBasicMaterial({ 
                 color: color, 
                 transparent: true,
-                opacity: 0.9
+                opacity: dotOpacity // Uses the calculated dotOpacity
             });
             const dot = new THREE.Mesh(dotGeometry, dotMaterial);
             group.add(dot);
             
-            const glowGeometry = new THREE.SphereGeometry(2.5, 8, 6); 
+            const glowGeometry = new THREE.SphereGeometry(glowSize, 8, 6); // Uses the calculated glowSize
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: color, 
                 transparent: true,
-                opacity: 0.15, 
+                opacity: glowOpacity, // Uses the calculated glowOpacity
                 blending: THREE.AdditiveBlending 
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
@@ -1321,7 +1324,7 @@
          * Sets up all UI control button click handlers and mouse/touch interactions for camera control.
          */
         function setupControls() {
-            // New Toggle functions for different satellite types and density map
+            // New Toggle functions for different satellite types
             document.getElementById('toggleStarlink').onclick = (event) => {
                 starlinkVisible = !starlinkVisible;
                 updateDisplayFromControls();
@@ -1342,17 +1345,6 @@
                 updateDisplayFromControls();
                 event.target.classList.toggle('active', inactiveVisible);
             };
-            document.getElementById('toggleDensityMap').onclick = (event) => {
-                densityMapVisible = !densityMapVisible;
-                if (densityMapMesh) {
-                    densityMapMesh.visible = densityMapVisible;
-                    if (densityMapVisible) {
-                        updateDensityMap(displayedSatellitesData); // Update when shown
-                    }
-                }
-                event.target.classList.toggle('active', densityMapVisible);
-            };
-
 
             document.getElementById('toggleOrbits').onclick = (event) => {
                 orbitsVisible = !orbitsVisible;
@@ -1567,115 +1559,6 @@
             document.getElementById('avgAlt').textContent = Math.round(avgAlt) + ' km';
             document.getElementById('coverage').textContent = Math.round(coverage) + '%';
         }
-
-        /**
-         * Creates the conceptual density map grid.
-         * The cells will be updated in `updateDensityMap`.
-         */
-        function createDensityMap() {
-            const gridCells = [];
-            const material = new THREE.MeshBasicMaterial({ 
-                color: 0x00ff00, // Base color for density
-                transparent: true, 
-                opacity: 0, // Initially invisible
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending // For glow effect
-            });
-            const cellHeight = (LEO_ALT_MAX - LEO_ALT_MIN) * SCALE_FACTOR / DENSITY_ALTITUDE_LAYERS;
-
-            for (let latIdx = 0; latIdx < DENSITY_GRID_RESOLUTION; latIdx++) {
-                for (let lonIdx = 0; lonIdx < DENSITY_GRID_RESOLUTION * 2; lonIdx++) { // *2 for longitude (0-360)
-                    for (let altIdx = 0; altIdx < DENSITY_ALTITUDE_LAYERS; altIdx++) {
-                        const geometry = new THREE.BoxGeometry(
-                            (Math.PI * EARTH_RADIUS * 2 / (DENSITY_GRID_RESOLUTION * 2)), // Approx width at equator
-                            (Math.PI * EARTH_RADIUS * 2 / DENSITY_GRID_RESOLUTION), // Approx height
-                            cellHeight // Altitude segment thickness
-                        );
-                        const cellMesh = new THREE.Mesh(geometry, material.clone()); // Clone material for individual opacity
-                        
-                        // Calculate center of cell in lat/lon/alt
-                        const lat = (latIdx / DENSITY_GRID_RESOLUTION) * 180 - 90 + (90/DENSITY_GRID_RESOLUTION);
-                        const lon = (lonIdx / (DENSITY_GRID_RESOLUTION * 2)) * 360 - 180 + (180/(DENSITY_GRID_RESOLUTION*2));
-                        const alt = LEO_ALT_MIN + (altIdx * (LEO_ALT_MAX - LEO_ALT_MIN) / DENSITY_ALTITUDE_LAYERS) + ((LEO_ALT_MAX - LEO_ALT_MIN) / (DENSITY_ALTITUDE_LAYERS * 2));
-                        
-                        const position = latLonToPosition(lat, lon, alt);
-                        cellMesh.position.copy(position);
-                        cellMesh.lookAt(earthGroup.position); // Point boxes towards center
-                        
-                        gridCells.push({ mesh: cellMesh, count: 0, latRange: [lat - 90/DENSITY_GRID_RESOLUTION, lat + 90/DENSITY_GRID_RESOLUTION], lonRange: [lon - 180/(DENSITY_GRID_RESOLUTION*2), lon + 180/(DENSITY_GRID_RESOLUTION*2)], altRange: [alt - (cellHeight/SCALE_FACTOR)/2, alt + (cellHeight/SCALE_FACTOR)/2] });
-                        earthGroup.add(cellMesh);
-                    }
-                }
-            }
-            densityMapMesh = new THREE.Group(); // Use a group to contain all cells
-            gridCells.forEach(cell => densityMapMesh.add(cell.mesh));
-            earthGroup.add(densityMapMesh); // Add the group to earthGroup
-            densityMapMesh.visible = densityMapVisible; // Initial visibility
-            densityMapMesh.userData.gridCells = gridCells; // Store grid cells for easy access
-        }
-
-        /**
-         * Updates the conceptual density map based on current satellite positions.
-         * @param {Array<Object>} satellitesData - Array of satellite data objects currently displayed.
-         */
-        function updateDensityMap(satellitesData) {
-            if (!densityMapMesh || !densityMapVisible) return;
-
-            // Reset counts for all cells
-            densityMapMesh.userData.gridCells.forEach(cell => cell.count = 0);
-
-            // Calculate density for each cell
-            satellitesData.forEach(sat => {
-                const satLat = sat.latitude;
-                const satLon = sat.longitude;
-                const satAlt = sat.altitude;
-
-                densityMapMesh.userData.gridCells.forEach(cell => {
-                    const [minLat, maxLat] = cell.latRange;
-                    const [minLon, maxLon] = cell.lonRange;
-                    const [minAlt, maxAlt] = cell.altRange;
-
-                    // Simple check if satellite is within cell's lat/lon/alt bounds
-                    if (satLat >= minLat && satLat < maxLat &&
-                        satAlt >= minAlt && satAlt < maxAlt) {
-                        // Handle longitude wrap-around (e.g., -180 to 180)
-                        if (minLon < maxLon) {
-                            if (satLon >= minLon && satLon < maxLon) {
-                                cell.count++;
-                            }
-                        } else { // Crosses the anti-meridian
-                            if (satLon >= minLon || satLon < maxLon) {
-                                cell.count++;
-                            }
-                        }
-                    }
-                });
-            });
-
-            // Update cell colors/opacity based on count
-            const maxCount = Math.max(...densityMapMesh.userData.gridCells.map(cell => cell.count));
-            densityMapMesh.userData.gridCells.forEach(cell => {
-                const density = cell.count;
-                let opacity = 0;
-                let color = new THREE.Color(0x00ff00); // Green base for heatmap
-                
-                if (maxCount > 0) {
-                    opacity = density / maxCount * 0.4; // Max opacity 40%
-                    // Interpolate color from green to yellow to red
-                    if (opacity > 0) {
-                        if (opacity < 0.2) { // Green for low density
-                            color.setHSL(0.33, 1, 0.5); // Green
-                        } else if (opacity < 0.3) { // Yellow for medium density
-                            color.setHSL(0.16, 1, 0.5); // Yellow
-                        } else { // Red for high density
-                            color.setHSL(0.0, 1, 0.5); // Red
-                        }
-                    }
-                }
-                cell.mesh.material.color.set(color);
-                cell.mesh.material.opacity = opacity;
-            });
-        }
         
         /**
          * The main animation loop for the 3D scene.
@@ -1712,9 +1595,6 @@
             });
             
             updateTrails(); 
-            if (densityMapVisible) {
-                updateDensityMap(displayedSatellitesData); // Update heatmap with current positions
-            }
             renderer.render(scene, camera); 
         }
         
