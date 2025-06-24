@@ -637,12 +637,20 @@
                 allOtherLeoData.push(...parseTLEs(iridiumTleText, 'other-leo'));
             }
 
-            // Fetch Debris (Fengyun 1C, Cosmos 2251)
-            const fy1cDebrisTleText = await fetchTLEGroup('fengyun_1c_debris');
+            // Fetch Debris (Cosmos 1408, Fengyun 1C, Iridium 33, Cosmos 2251)
+            const cosmos1408DebrisTleText = await fetchTLEGroup('cosmos-1408-debris');
+            if (cosmos1408DebrisTleText) {
+                allDebrisData.push(...parseTLEs(cosmos1408DebrisTleText, 'debris'));
+            }
+            const fy1cDebrisTleText = await fetchTLEGroup('fengyun-1c-debris');
             if (fy1cDebrisTleText) {
                 allDebrisData.push(...parseTLEs(fy1cDebrisTleText, 'debris'));
             }
-            const c2251DebrisTleText = await fetchTLEGroup('cosmos_2251_debris');
+            const iridium33DebrisTleText = await fetchTLEGroup('iridium-33-debris');
+            if (iridium33DebrisTleText) {
+                allDebrisData.push(...parseTLEs(iridium33DebrisTleText, 'debris'));
+            }
+            const c2251DebrisTleText = await fetchTLEGroup('cosmos-2251-debris');
             if (c2251DebrisTleText) {
                 allDebrisData.push(...parseTLEs(c2251DebrisTleText, 'debris'));
             }
@@ -1122,48 +1130,54 @@
          */
         function showSatelliteDetails(satData) {
             const detailsContent = document.getElementById('satelliteDetailsContent');
+            // Determine color based on satellite type
+            let color = '#00ff88'; // Default green (starlink)
+            if (satData.type === 'other-leo') color = '#6699ff'; // Blue
+            else if (satData.type === 'debris') color = '#ffaa00'; // Orange
+            else if (satData.type === 'inactive') color = '#ff4444'; // Red
+
             detailsContent.innerHTML = `
-                <div class="detail-item">
-                    <span>Name:</span>
-                    <span class="detail-value">${satData.name}</span>
+                <div style="color: ${color}">
+                    <div class="detail-item">
+                        <span>Name:</span>
+                        <span>${satData.name}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Type:</span>
+                        <span>${satData.type.replace('-', ' ').toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Status:</span>
+                        <span>${satData.status.toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Altitude:</span>
+                        <span>${satData.altitude.toFixed(1)} km</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Inclination:</span>
+                        <span>${satData.inclination.toFixed(1)}°</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Velocity:</span>
+                        <span>${satData.velocity.toFixed(2)} km/s</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Latitude:</span>
+                        <span>${satData.latitude.toFixed(2)}°</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Longitude:</span>
+                        <span>${satData.longitude.toFixed(2)}°</span>
+                    </div>
+                    ${(satData.launchYear) ? `<div class="detail-item">
+                        <span>Launch Year:</span>
+                        <span>${satData.launchYear}</span>
+                    </div>` : ''}
                 </div>
-                <div class="detail-item">
-                    <span>Type:</span>
-                    <span class="detail-value">${satData.type.replace('-', ' ').toUpperCase()}</span>
-                </div>
-                <div class="detail-item">
-                    <span>Status:</span>
-                    <span class="detail-value">${satData.status.toUpperCase()}</span>
-                </div>
-                <div class="detail-item">
-                    <span>Altitude:</span>
-                    <span class="detail-value">${satData.altitude.toFixed(1)} km</span>
-                </div>
-                <div class="detail-item">
-                    <span>Inclination:</span>
-                    <span class="detail-value">${satData.inclination.toFixed(1)}°</span>
-                </div>
-                <div class="detail-item">
-                    <span>Velocity:</span>
-                    <span class="detail-value">${satData.velocity.toFixed(2)} km/s</span>
-                </div>
-                <div class="detail-item">
-                    <span>Latitude:</span>
-                    <span class="detail-value">${satData.latitude.toFixed(2)}°</span>
-                </div>
-                <div class="detail-item">
-                    <span>Longitude:</span>
-                    <span class="detail-value">${satData.longitude.toFixed(2)}°</span>
-                </div>
-                ${satData.launchYear ? `<div class="detail-item">
-                    <span>Launch Year:</span>
-                    <span class="detail-value">${satData.launchYear}</span>
-                </div>` : ''}
             `;
-            
-            document.getElementById('satelliteDetails').style.display = 'block'; 
+            document.getElementById('satelliteDetails').style.display = 'block';
         }
-        
         /**
          * Visually highlights a specific satellite in the 3D scene and dims others.
          * @param {object} highlightedSat - The 3D satellite object to highlight.
